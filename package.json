@@ -1,0 +1,23 @@
+{
+  "name": "ske-viz",
+  "version": "0.0.1",
+  "description": "SkE Data Visualizations",
+  "keywords": [
+    "dataviz",
+    "visualization",
+    "thesaurus",
+    "word sketch",
+    "word sketch difference",
+    "animation",
+    "svg"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Lucia Kocincova <ping@lucyia.com>",
+    "url": "lucyia.com"
+  },
+  "license": "BSD-3-Clause"
+}
