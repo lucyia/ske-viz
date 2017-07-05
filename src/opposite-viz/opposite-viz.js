@@ -406,4 +406,4 @@ function OppositeViz(data, params) {
 
 }
 
-export { OppositeViz };
+export default OppositeViz;

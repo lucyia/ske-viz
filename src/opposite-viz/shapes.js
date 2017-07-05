@@ -23,20 +23,20 @@ function wordCircles(className, params, scale) {
     },
     mouseover: function (d) {
       // custom callback
-      if (typeof params.viz.mouseover === 'function') {
+      if (typeof params.circles.mouseover === 'function') {
         params.circles.mouseover(d);
       }
     },
     mouseout: function (d) {
       // custom callback
-      if (typeof params.viz.mouseout === 'function') {
+      if (typeof params.circles.mouseout === 'function') {
         params.circles.mouseout(d);
       }
     },
     mouseclick: function (d) {
       console.log(d);
       // custom callback
-      if (typeof params.viz.mouseclick === 'function') {
+      if (typeof params.circles.mouseclick === 'function') {
         params.circles.mouseclick(d);
       }
     }
@@ -74,20 +74,20 @@ function wordTexts(className, params, scale) {
     },
     mouseover: function (d) {
       // custom callback
-      if (typeof params.viz.mouseover === 'function') {
+      if (typeof params.text.mouseover === 'function') {
         params.text.mouseover(d);
       }
     },
     mouseout: function (d) {
       // custom callback
-      if (typeof params.viz.mouseout === 'function') {
+      if (typeof params.text.mouseout === 'function') {
         params.text.mouseout(d);
       }
     },
     mouseclick: function (d) {
       console.log(d);
       // custom callback
-      if (typeof params.viz.mouseclick === 'function') {
+      if (typeof params.text.mouseclick === 'function') {
         params.text.mouseclick(d);
       }
     }
