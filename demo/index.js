@@ -1,9 +1,7 @@
 import { parseURL } from 'utils/data-service';
 import OppositeViz from 'opposite-viz/opposite-viz';
 
-console.log('opposite', OppositeViz);
-
-const urlWSDiff = 'data/wsdiff_house_home.json';
+const urlWSDiff = './data/wsdiff_house_home.json';
 const params = {
   viz: {
     divId: 'viz-container',
@@ -14,7 +12,7 @@ const params = {
   },
   ticks: {
     show: true,
-    number: 15
+    number: 6
   },
   text: {
     size: [10, 20],

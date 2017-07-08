@@ -24,7 +24,7 @@ const config = {
   ],
   devtool: 'source-map',
   devServer: {
-    contentBase: './src',
+    contentBase: './',
     inline: true
   },
   output: {
@@ -50,6 +50,7 @@ const config = {
   },
   resolve: {
     modules: [
+      path.resolve('./demo'),
       path.resolve('./src'),
       path.resolve('./node_modules')
     ],
