@@ -4,3 +4,6 @@ node_modules
 # Logs
 *.log
 logs
+
+# Testing data
+demo/data

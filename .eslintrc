@@ -171,10 +171,10 @@
     "spaced-comment": [2, "always"],
     "strict": 0,
     "use-isnan": 2,
-    "valid-jsdoc": 0,
+    "valid-jsdoc": 1,
     "valid-typeof": 2,
     "vars-on-top": 2,
-    "wrap-iife": [2, "any"],
+    "wrap-iife": [2, "inside"],
     "wrap-regex": 0,
     "yoda": [2, "never"]
   }
