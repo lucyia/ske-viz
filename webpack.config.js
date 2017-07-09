@@ -20,6 +20,7 @@ const config = {
   context: __dirname,
   entry: [
     'webpack-dev-server/client?http://localhost:8080',
+    __dirname + '/demo',
     __dirname + '/src/index.js'
   ],
   devtool: 'source-map',
