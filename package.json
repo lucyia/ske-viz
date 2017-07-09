@@ -11,7 +11,7 @@
     "animation",
     "svg"
   ],
-  "main": "build/ske-viz.js",
+  "main": "build/ske-viz.min.js",
   "scripts": {
     "build": "webpack --env build",
     "start": "webpack-dev-server --config webpack.config.js --inline --colors --env dev --port 8080",
@@ -22,6 +22,10 @@
     "name": "Lucia Kocincova",
     "email": "ping@lucyia.com",
     "url": "lucyia.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucyia/ske-viz.git"
   },
   "dependencies": {
     "d3-array": "^1.2.0",
