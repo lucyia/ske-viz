@@ -50,7 +50,8 @@ const defaultParams = {
     ]
   },
   category: {
-    showName: true
+    showName: true,
+    showItems: undefined
   }
 };
 
