@@ -100,18 +100,29 @@ function _getBoundingBox(word) {
   // draw the text into SVG
   drawShape([word], textParams);
 
+  // default width is the length of the word
+  let width = word.text.length;
+  // default height is font size
+  let height = _params.text.size[0];
+
   // get the rendered element
   const element = document.getElementById(id);
 
-  // get the bounding box
-  const bbox = element.getBBox();
+  if (element) {
+    // get the bounding box
+    const bbox = element.getBBox();
 
-  // remove the text from SVG
-  element.parentElement.removeChild(element);
+    // remove the text from SVG
+    element.parentElement.removeChild(element);
+
+    // update the variables
+    width = bbox.width;
+    height = bbox.height;
+  }
 
   return {
-    width: bbox.width,
-    height: bbox.height
+    width,
+    height
   };
 }
 
