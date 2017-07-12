@@ -12,7 +12,19 @@ function getNewParams(defaultParams, params) {
       if (params && params[type] && params[type][param]) {
         newParams[type][param] = params[type][param];
       } else {
-        newParams[type][param] = defaultParams[type][param];
+        const newValue = defaultParams[type][param];
+
+        // new values have to be duplicated, not only assigned to a reference that could change
+        if (typeof newValue === 'object' && !Array.isArray(newValue)) {
+          // duplicate an object
+          newParams[type][param] = Object.assign({}, newValue);
+        } else if (Array.isArray(newValue)) {
+          // duplicate an array
+          newParams[type][param] = newValue.slice();
+        } else {
+          // other values can be just assigned
+          newParams[type][param] = newValue;
+        }
       }
     }
   }
