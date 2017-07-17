@@ -10,7 +10,7 @@ function wordCircles(className, params, scale) {
       cy: d => d.y,
       fill: d => d.color,
       stroke: d => color(d.color).darker(0.5),
-      strokeWidth: d => 2,
+      strokeWidth: d => params.circle.strokeWidth,
       r: d => params.viz.animation ? 0 : scale.freqRadius(d.freq),
 
       transition: {
@@ -23,21 +23,20 @@ function wordCircles(className, params, scale) {
     },
     mouseover: function (d) {
       // custom callback
-      if (typeof params.circles.mouseover === 'function') {
-        params.circles.mouseover(d);
+      if (typeof params.circle.mouseover === 'function') {
+        params.circle.mouseover(d);
       }
     },
     mouseout: function (d) {
       // custom callback
-      if (typeof params.circles.mouseout === 'function') {
-        params.circles.mouseout(d);
+      if (typeof params.circle.mouseout === 'function') {
+        params.circle.mouseout(d);
       }
     },
     mouseclick: function (d) {
-      console.log(d);
       // custom callback
-      if (typeof params.circles.mouseclick === 'function') {
-        params.circles.mouseclick(d);
+      if (typeof params.circle.mouseclick === 'function') {
+        params.circle.mouseclick(d);
       }
     }
   };
@@ -51,7 +50,7 @@ function wordTexts(className, params, scale) {
       id: d => 'word__text-' + d.id,
       x: d => (params.viz.width / 2) + d.x,
       y: d => d.y,
-      fill: d => 'white',
+      fill: d => params.text.color,
       fontSize: d => params.text.scale ? scale.fontSize(d.words[0].freq + d.words[1].freq) : params.text.size[0],
       fontFamily: d => params.text.font,
       textAnchor: d => 'middle',
@@ -85,7 +84,6 @@ function wordTexts(className, params, scale) {
       }
     },
     mouseclick: function (d) {
-      console.log(d);
       // custom callback
       if (typeof params.text.mouseclick === 'function') {
         params.text.mouseclick(d);
@@ -101,7 +99,7 @@ function categoryName(className, params) {
     enter: {
       x: d => params.viz.width / 2,
       y: d => -13,
-      fill: d => params.scores.ticks,
+      fill: d => params.legend.color,
       fontFamily: d => params.text.font,
       fontSize: d => 18,
       textAnchor: d => 'middle',
@@ -124,7 +122,7 @@ function mainWordsBackground(className, params) {
       id: d => d.id + '__rect',
       x: d => d.x,
       y: d => d.y,
-      width: d => params.scores.width,
+      width: d => params.score.width,
       height: d => params.viz.height,
       fill: d => color(d.color).brighter(0.7),
       opacity: d => params.viz.animation ? 0 : 1,
@@ -142,9 +140,9 @@ function mainWordsText(className, params) {
     class: className,
     enter: {
       id: d => d.id + '__text',
-      x: d => d.x + params.scores.width / 2,
+      x: d => d.x + params.score.width / 2,
       y: d => d.y + params.viz.height / 2,
-      fill: d => 'rgb(255, 255, 255)',
+      fill: d => params.text.color,
       fontFamily: d => params.text.font,
       fontSize: d => 25,
       textAnchor: d => 'middle',
@@ -185,7 +183,7 @@ function scoreLegendTicks(className, params) {
       y: d => d.y,
       width: d => 1,
       height: d => 5,
-      fill: d => color(params.scores.ticks).brighter(0.5),
+      fill: d => color(params.legend.color).brighter(0.5),
       opacity: d => params.viz.animation ? 0 : 1,
 
       transition: {
@@ -202,7 +200,7 @@ function scoreLegendNumbers(className, params) {
     enter: {
       x: d => params.viz.width / 2 + d.x,
       y: d => d.y + 13,
-      fill: d => color(params.scores.ticks).brighter(0.5),
+      fill: d => color(params.legend.color).brighter(0.5),
       fontFamily: d => params.text.font,
       fontSize: d => 10,
       textAnchor: d => 'middle',
@@ -219,13 +217,13 @@ function scoreLegendText(className, params) {
     enter: {
       x: d => d.x,
       y: d => d.y,
-      fill: d => color(params.scores.ticks).brighter(0.5),
+      fill: d => color(params.legend.color).brighter(0.5),
       fontFamily: d => params.text.font,
       fontSize: d => 10,
       textAnchor: (d, i) => {
         if (i === 0) {
           return 'start';
-        } else if (i === params.scores.showText.length - 1) {
+        } else if (i === params.score.showText.length - 1) {
           return 'end';
         }
         return 'middle';
