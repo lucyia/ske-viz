@@ -2,28 +2,29 @@ import { parseURL } from 'utils/data-service';
 import OppositeViz from 'opposite-viz/opposite-viz';
 
 const urlWSDiff = './data/wsdiff_house_home.json';
-const params = {
-  ticks: {
-    show: true,
-    number: 6
-  },
-  text: {
-    size: [10, 20],
-    font: 'Arial, sans-serif'
-  },
-  circles: {
-    show: true
-  }
-};
 
 const showFirst = {
   viz: {
     divId: 'viz-container-1',
     svgId: 'ske-viz-opposite-1',
-    className: 'wswiff-viz-1'
+    className: 'wswiff-viz-1',
+    animation: false
   },
   category: {
     showItems: [1]
+  },
+  circle: {
+    mouseclick: (d) => {
+      console.log('clicked a circle - ', d);
+    }
+  },
+  text: {
+    mouseclick: (d) => {
+      console.log('clicked a text - ', d);
+    }
+  },
+  tick: {
+    number: 3
   }
 };
 
@@ -35,6 +36,10 @@ const showSecondThird = {
   },
   category: {
     showItems: [2, 3]
+  },
+  text: {
+    size: [12, 30],
+    font: 'Arial, sans-serif'
   }
 };
 
@@ -66,10 +71,10 @@ function catchError(event) {
 parseURL(urlWSDiff, 'WS_DIFF')
   .then(data => {
     // either show only a selected number
-    OppositeViz(data, Object.assign(showFirst, params));
-    OppositeViz(data, Object.assign(showSecondThird, params));
+    OppositeViz(data, showFirst);
+    OppositeViz(data, showSecondThird);
 
     // or show all the categories
-    OppositeViz(data, Object.assign(showAll, params));
+    OppositeViz(data, showAll);
   })
   .catch(catchError);

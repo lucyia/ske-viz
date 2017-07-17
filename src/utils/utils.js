@@ -9,7 +9,7 @@ function getNewParams(defaultParams, params) {
     newParams[type] = {};
 
     for (let param in defaultParams[type]) {
-      if (params && params[type] && params[type][param]) {
+      if (params && params[type] && params[type][param] !== undefined) {
         newParams[type][param] = params[type][param];
       } else {
         const newValue = defaultParams[type][param];

@@ -69,7 +69,7 @@ function OppositeViz(data, params) {
     const newScoreRange = [Math.ceil(scoreRange[0]), Math.ceil(scoreRange[1])];
 
     // create a test scale from which ticks will be calculated
-    let ticks = scaleLinear().domain(newScoreRange).ticks(_params.ticks.number);
+    let ticks = scaleLinear().domain(newScoreRange).ticks(_params.tick.number);
     const tickDifference = ticks[1] - ticks[0];
 
     // add a tick at each of the ends - this creates a margin for the words so that they do not overlap with main words
@@ -134,7 +134,7 @@ function OppositeViz(data, params) {
         id: `main_word-0-${ _data.mainWords[0].text }`,
         text: _data.mainWords[0].text,
         freq: _data.mainWords[0].freq,
-        color: _params.scores.color[1],
+        color: _params.score.color[1],
         x: _params.viz.width,
         y: 0
       },
@@ -142,15 +142,15 @@ function OppositeViz(data, params) {
         id: `main_word-1-${ _data.mainWords[1].text }`,
         text: _data.mainWords[1].text,
         freq: _data.mainWords[1].freq,
-        color: _params.scores.color[0],
-        x: -(_params.scores.width),
+        color: _params.score.color[0],
+        x: -(_params.score.width),
         y: 0
       }
     ];
   }
 
   function _createScoreLegendText() {
-    return _params.scores.showText.map((text, i) => {
+    return _params.score.showText.map((text, i) => {
 
       let newLegendText = text;
       const mainWords = _createMainWords();
@@ -169,9 +169,9 @@ function OppositeViz(data, params) {
       let x = i * (_params.viz.width / 2);
 
       if (i === 0) {
-        x = i * (_params.viz.width / 2) - _params.scores.width;
-      } else if (i === _params.scores.showText.length - 1) {
-        x = i * (_params.viz.width / 2) + _params.scores.width;
+        x = i * (_params.viz.width / 2) - _params.score.width;
+      } else if (i === _params.score.showText.length - 1) {
+        x = i * (_params.viz.width / 2) + _params.score.width;
       }
 
       let y = _params.viz.height + 15;
@@ -185,8 +185,8 @@ function OppositeViz(data, params) {
   }
 
   function _createScoreLegendTicks() {
-    let legendTicks = _ticks.score.map((tick, j) => ({
-      text: _createScoreLegendText(tick),
+    let legendTicks = _ticks.score.map(tick => ({
+      text: tick,
       x: _scale.scoreRange(tick),
       y: _params.viz.height
     }));
@@ -219,7 +219,7 @@ function OppositeViz(data, params) {
         r: radiusCircle1,
         freq: word.words[0].freq,
         score: word.score,
-        color: _params.circles.color[1],
+        color: _params.circle.color[1],
         id: word.words[0].id,
         text: word.text,
         wordX: word.x,
@@ -231,7 +231,7 @@ function OppositeViz(data, params) {
         r: radiusCircle2,
         freq: word.words[1].freq,
         score: word.score,
-        color: _params.circles.color[0],
+        color: _params.circle.color[0],
         id: word.words[1].id,
         text: word.text,
         wordX: word.x,
@@ -285,7 +285,7 @@ function OppositeViz(data, params) {
 
     _scale.freqRadius = scaleSqrt()
       .domain(freqRange)
-      .range(_params.circles.size);
+      .range(_params.circle.size);
 
     _scale.fontSize = scaleSqrt()
       .domain(sumedFreqRange)
@@ -297,11 +297,11 @@ function OppositeViz(data, params) {
 
     _scale.scoreColor = scaleLinear()
       .domain(scoreRange)
-      .range(_params.circles.color);
+      .range(_params.circle.color);
 
     _scale.scoreBackgroundColor = scaleLinear()
       .domain(scoreRange)
-      .range(_params.scores.color);
+      .range(_params.score.color);
   }
 
   function _addPositions(wordsInCategory, i) {
@@ -376,14 +376,12 @@ function OppositeViz(data, params) {
 
       drawShape(_createScoreBackground(i), scoreBackground(`score-bg__rect-${ i }`, _params, _scale));
 
-      if (_params.scores.showNumbers) {
+      if (_params.score.showNumbers) {
         const scoreLegendTickValues = _createScoreLegendTicks();
 
         drawShape(scoreLegendTickValues, scoreLegendTicks(`score-tick__rect-${ i }`, _params));
         drawShape(scoreLegendTickValues, scoreLegendNumbers(`score-tick__text-${ i }`, _params));
-      }
-
-      if (_params.scores.showText) {
+      } else if (_params.score.showText) {
         drawShape(_createScoreLegendText(), scoreLegendText(`legend-text-${ i }`, _params));
       }
 
@@ -395,20 +393,24 @@ function OppositeViz(data, params) {
       }
 
       drawShape(mainWords, mainWordsBackground(`main-word__rect-${ i }`, _params));
-      drawShape(mainWords, mainWordsText(`main-word__text-${ i }`, _params));
 
-      drawShape(_rendering.circles[i], wordCircles(`word__circles-${ i }`, _params, _scale));
+      if (_params.circle.show) {
+        drawShape(_rendering.circles[i], wordCircles(`word__circles-${ i }`, _params, _scale));
+      }
 
-      drawShape(_rendering.texts[i], wordTexts(`word__text-${ i }`, _params, _scale));
+      if (_params.text.show) {
+        drawShape(mainWords, mainWordsText(`main-word__text-${ i }`, _params));
+        drawShape(_rendering.texts[i], wordTexts(`word__text-${ i }`, _params, _scale));
+      }
     });
   }
 
   _params = getNewParams(defaultParams, params);
   // update the width - don't include the panels for main words
-  _params.viz.width -= _params.scores.width * 2;
+  _params.viz.width -= _params.score.width * 2;
   // update the margins - don't include the panels for main words
-  _params.viz.margin.left += _params.scores.width;
-  _params.viz.margin.right += _params.scores.width;
+  _params.viz.margin.left += _params.score.width;
+  _params.viz.margin.right += _params.score.width;
 
   // duplicate the data so a local copy can be modified without changing to the originally pointed data
   _data = Object.assign({}, data);
