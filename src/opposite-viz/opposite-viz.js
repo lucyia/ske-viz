@@ -100,7 +100,7 @@ function OppositeViz(data, params) {
     };
 
     // draw the text into SVG
-    drawShape([word], textParams);
+    drawShape([word], textParams, false);
 
     // default width is the length of the word
     let width = word.text.length;
@@ -143,7 +143,7 @@ function OppositeViz(data, params) {
         text: _data.mainWords[1].text,
         freq: _data.mainWords[1].freq,
         color: _params.score.color[0],
-        x: -(_params.score.width),
+        x: -(_params.viz.mainWordWidth),
         y: 0
       }
     ];
@@ -169,9 +169,9 @@ function OppositeViz(data, params) {
       let x = i * (_params.viz.width / 2);
 
       if (i === 0) {
-        x = i * (_params.viz.width / 2) - _params.score.width;
+        x = i * (_params.viz.width / 2) - _params.viz.mainWordWidth;
       } else if (i === _params.score.showText.length - 1) {
-        x = i * (_params.viz.width / 2) + _params.score.width;
+        x = i * (_params.viz.width / 2) + _params.viz.mainWordWidth;
       }
 
       let y = _params.viz.height + 15;
@@ -374,47 +374,81 @@ function OppositeViz(data, params) {
 
       _addPositions(wordsInCategory, i);
 
-      drawShape(_createScoreBackground(i), scoreBackground(`score-bg__rect-${ i }`, _params, _scale));
+      // create data objects with parameters for background shapes
+      const bckgData = scoreBackground(`score-bg__rect-${ i }`, _params, _scale);
+
+      // draw background rectangles for score  and put them in a group
+      drawShape(_createScoreBackground(i), bckgData, true);
 
       if (_params.score.showNumbers) {
+        // create an array of tick values
         const scoreLegendTickValues = _createScoreLegendTicks();
 
-        drawShape(scoreLegendTickValues, scoreLegendTicks(`score-tick__rect-${ i }`, _params));
-        drawShape(scoreLegendTickValues, scoreLegendNumbers(`score-tick__text-${ i }`, _params));
+        // create data objects with parameters for legend ticks and numbers
+        const scoreLegendTicksData = scoreLegendTicks(`score-tick__rect-${ i }`, _params);
+        const scoreLegendTicksNumbersData = scoreLegendNumbers(`score-tick__text-${ i }`, _params);
+
+        // draw rectangles and numbers as legend and put them in a group
+        drawShape(scoreLegendTickValues, scoreLegendTicksData, true);
+        drawShape(scoreLegendTickValues, scoreLegendTicksNumbersData, true);
       } else if (_params.score.showText) {
-        drawShape(_createScoreLegendText(), scoreLegendText(`legend-text-${ i }`, _params));
+        // create an array of text values
+        const scoreLegendTextData = scoreLegendText(`legend-text-${ i }`, _params);
+
+        // draw text as legend and put them in a group
+        drawShape(_createScoreLegendText(), scoreLegendTextData, true);
       }
 
       if (_params.category.showName) {
         const mainWordsTexts = `${ mainWords[0].text }/${ mainWords[1].text }`;
-        const categoryNameTexts = wordsInCategory.info.name.replace('%w', mainWordsTexts);
+        // create an array that wil cotain the name of the category
+        const categoryNameTexts = [wordsInCategory.info.name.replace('%w', mainWordsTexts)];
 
-        drawShape([categoryNameTexts], categoryName(`category__text-${ i }`, _params));
+        // create data objects with parameters for category name
+        const categoryNameData = categoryName(`category__text-${ i }`, _params);
+
+        // draw text of the category and put them in a group
+        drawShape(categoryNameTexts, categoryNameData, true);
       }
 
-      drawShape(mainWords, mainWordsBackground(`main-word__rect-${ i }`, _params));
+      // create data objects with parameters for main words background
+      const mainWordsData = mainWordsBackground(`main-word__rect-${ i }`, _params);
+
+      // draw rectangles of the main words and put them in a group
+      drawShape(mainWords, mainWordsData, true);
 
       if (_params.circle.show) {
-        drawShape(_rendering.circles[i], wordCircles(`word__circles-${ i }`, _params, _scale));
+        // create data objects with parameters for word circles
+        const wordCirclesData = wordCircles(`word__circles-${ i }`, _params, _scale);
+
+        // draw circles of the words and put them in a group
+        drawShape(_rendering.circles[i], wordCirclesData, true);
       }
 
       if (_params.text.show) {
-        drawShape(mainWords, mainWordsText(`main-word__text-${ i }`, _params));
-        drawShape(_rendering.texts[i], wordTexts(`word__text-${ i }`, _params, _scale));
+        // create data objects with parameters for main word texts
+        const mainWordsTextData = mainWordsText(`main-word__text-${ i }`, _params);
+        // create data objects with parameters for word texts
+        const wordsTextData = wordTexts(`word__text-${ i }`, _params, _scale);
+
+        // draw the text of main words and all other words and put them in separate groups
+        drawShape(mainWords, mainWordsTextData, true);
+        drawShape(_rendering.texts[i], wordsTextData, true);
       }
     });
   }
 
   _params = getNewParams(defaultParams, params);
   // update the width - don't include the panels for main words
-  _params.viz.width -= _params.score.width * 2;
+  _params.viz.width -= _params.viz.mainWordWidth * 2;
   // update the margins - don't include the panels for main words
-  _params.viz.margin.left += _params.score.width;
-  _params.viz.margin.right += _params.score.width;
+  _params.viz.margin.left += _params.viz.mainWordWidth;
+  _params.viz.margin.right += _params.viz.mainWordWidth;
 
-  // duplicate the data so a local copy can be modified without changing to the originally pointed data
+  // duplicate the data so a local copy can be modified without changing the originally data
   _data = Object.assign({}, data);
 
+  // filter out categories according to their indexes which were given in parameters
   if (_params.category.showItems) {
     _data.words = _params.category.showItems.map(itemIndex => {
       return data.words[itemIndex];
