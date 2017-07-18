@@ -104,9 +104,16 @@ function _enter(shapesSelection, shapeParams) {
   enterShape.on('mouseout', shapeParams.mouseout);
 }
 
-function drawShape(data, shapeParams) {
+function drawShape(data, shapeParams, createGroup) {
+  let shapesGroup = _svg;
+
+  if (createGroup) {
+    shapesGroup = _svg.append('g')
+      .attr('class', `group-${shapeParams.class}`);
+  }
+
   // bind the data with the selection
-  let shapesSelection = _svg.selectAll('.' + shapeParams.class)
+  let shapesSelection = shapesGroup.selectAll(`.${shapeParams.class}`)
     .data(data);
 
   // exit, update and enter the selection

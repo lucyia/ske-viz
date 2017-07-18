@@ -6,6 +6,7 @@ const defaultParams = {
     width: 800,
     height: 500,
     margin: { top: 80, right: 50, bottom: 60, left: 50 },
+    mainWordWidth: 60,
     animation: true
   },
   tick: {
@@ -16,6 +17,7 @@ const defaultParams = {
     scale: true,
     color: 'rgb(255, 255, 255)',
     size: [13, 25],
+    mainWordSize: 25,
     font: 'Metrophobic, sans-serif',
     mouseover: undefined,
     mouseout: undefined,
@@ -33,7 +35,6 @@ const defaultParams = {
     mouseclick: undefined
   },
   score: {
-    width: 50,
     // color: ['rgb(0, 163, 66)', 'rgb(140, 65, 172)'],
     // color: ['rgb(1, 133, 113)', 'rgb(166, 97, 26)'],
     color: ['rgb(13, 108, 120)', 'rgb(175, 128, 30)'],

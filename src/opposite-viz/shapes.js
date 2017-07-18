@@ -122,7 +122,7 @@ function mainWordsBackground(className, params) {
       id: d => d.id + '__rect',
       x: d => d.x,
       y: d => d.y,
-      width: d => params.score.width,
+      width: d => params.viz.mainWordWidth,
       height: d => params.viz.height,
       fill: d => color(d.color).brighter(0.7),
       opacity: d => params.viz.animation ? 0 : 1,
@@ -135,20 +135,23 @@ function mainWordsBackground(className, params) {
 }
 
 function mainWordsText(className, params) {
+  const x = d => d.x + params.viz.mainWordWidth / 2;
+  const y = d => d.y + params.viz.height / 2;
+
   return {
     shape: 'text',
     class: className,
     enter: {
       id: d => d.id + '__text',
-      x: d => d.x + params.score.width / 2,
-      y: d => d.y + params.viz.height / 2,
+      x: d => x(d),
+      y: d => y(d),
       fill: d => params.text.color,
       fontFamily: d => params.text.font,
-      fontSize: d => 25,
+      fontSize: d => params.text.mainWordSize,
       textAnchor: d => 'middle',
       alignmentBaseline: d => 'middle',
       text: d => d.text,
-      transform: d => `rotate(-90 ${ d.x + 25 } ${ d.y + params.viz.height / 2 })`
+      transform: d => `rotate(-90 ${ x(d) } ${ y(d) })`
     }
   };
 }
