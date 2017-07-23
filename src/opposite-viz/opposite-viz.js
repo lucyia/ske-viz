@@ -268,7 +268,8 @@ function OppositeViz(data, params) {
       height: height,
       text: word.text,
       score: word.score,
-      words: word.words
+      words: word.words,
+      id: word.words[0].id // both words' id are the same
     };
   }
 
@@ -284,7 +285,7 @@ function OppositeViz(data, params) {
         freq: word.words[0].freq,
         score: word.score,
         color: _params.circle.color[1],
-        id: word.words[0].id,
+        id: `${word.words[0].id}__0`,
         text: word.text,
         wordX: word.x,
         wordY: word.y
@@ -296,7 +297,7 @@ function OppositeViz(data, params) {
         freq: word.words[1].freq,
         score: word.score,
         color: _params.circle.color[0],
-        id: word.words[1].id,
+        id: `${word.words[1].id}__1`,
         text: word.text,
         wordX: word.x,
         wordY: word.y
