@@ -21,19 +21,19 @@ function wordCircles(className, params, scale) {
     exit: {
       r: 0
     },
-    mouseover: function (d) {
+    mouseover: function mouseover(d) {
       // custom callback
       if (typeof params.circle.mouseover === 'function') {
         params.circle.mouseover(d);
       }
     },
-    mouseout: function (d) {
+    mouseout: function mouseout(d) {
       // custom callback
       if (typeof params.circle.mouseout === 'function') {
         params.circle.mouseout(d);
       }
     },
-    mouseclick: function (d) {
+    mouseclick: function mouseclick(d) {
       // custom callback
       if (typeof params.circle.mouseclick === 'function') {
         params.circle.mouseclick(d);
@@ -71,19 +71,19 @@ function wordTexts(className, params, scale) {
     exit: {
       fontSize: d => 0
     },
-    mouseover: function (d) {
+    mouseover: function mouseover(d) {
       // custom callback
       if (typeof params.text.mouseover === 'function') {
         params.text.mouseover(d);
       }
     },
-    mouseout: function (d) {
+    mouseout: function mouseout(d) {
       // custom callback
       if (typeof params.text.mouseout === 'function') {
         params.text.mouseout(d);
       }
     },
-    mouseclick: function (d) {
+    mouseclick: function mouseclick(d) {
       // custom callback
       if (typeof params.text.mouseclick === 'function') {
         params.text.mouseclick(d);

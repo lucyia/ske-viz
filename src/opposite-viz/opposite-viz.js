@@ -1,6 +1,6 @@
 // external libraries
 import { scaleLinear, scaleSqrt } from 'd3-scale';
-import { extent } from 'd3-array';
+import { extent, range } from 'd3-array';
 
 // internal helper functions
 import { createSVG, drawShape } from '../utils/shape-service';
@@ -12,13 +12,11 @@ import { wordCircles, wordTexts, categoryName, mainWordsBackground, mainWordsTex
   scoreBackground, scoreLegendTicks, scoreLegendNumbers, scoreLegendText } from './shapes';
 
 /**
- * @requires D3-scale
- * @requires D3-color
- * @requires D3-array
- * @requires ShapeService
- * @requires Utils
+ * OpposiveViz
+ * @param {object} data - data containing words and main words
+ * @param {object} params - parameters
+ * @returns {void}
  */
-
 function OppositeViz(data, params) {
 
   let _params;
@@ -64,23 +62,86 @@ function OppositeViz(data, params) {
     });
   }
 
-  function _getEvenScoreTicks(scoreRange) {
-    // update the range so that numbers are integers
-    const newScoreRange = [Math.ceil(scoreRange[0]), Math.ceil(scoreRange[1])];
+  function _getScoreTicks(scoreExtent) {
+    let rangeScore = scoreExtent;
 
-    // create a test scale from which ticks will be calculated
-    let ticks = scaleLinear().domain(newScoreRange).ticks(_params.tick.number);
-    const tickDifference = ticks[1] - ticks[0];
+    // if the scores do not include 0, that means that words occur only with one word
+    // and scale needs to be adjusted so it is visualized correctly
+    if (!rangeScore.includes(0)) {
+      const midScore = Math.abs(rangeScore[1] - rangeScore[0]) / 2;
 
-    // add a tick at each of the ends - this creates a margin for the words so that they do not overlap with main words
-    ticks = [ticks[0] - tickDifference, ...ticks, ticks[ticks.length - 1] + tickDifference];
-
-    if (!(ticks.length % 2)) {
-      // if the scale does not have even number of ticks, add one
-      ticks.push(ticks[ticks.length - 1] + tickDifference);
+      if (rangeScore[0] < 0) {
+        rangeScore = extent([...rangeScore, 0, midScore]);
+      } else {
+        rangeScore = extent([-midScore, 0, ...rangeScore]);
+      }
     }
 
+    // create a test scale from which ticks will be calculated
+    let ticks = scaleLinear()
+      .domain(rangeScore)
+      .ticks(_params.tick.number);
+
+    const tickStep = ticks[1] - ticks[0];
+
+    // if after adjustment, min and max are still not included, add them
+    const minData = scoreExtent[0];
+    const maxData = scoreExtent[1];
+    let minTick = ticks[0];
+    let maxTick = ticks[ticks.length - 1];
+
+    // add the missing ticks between minData and minTick
+    if (minData < minTick) {
+      // ceil the number of steps needed
+      const stepsMissingMin = Math.ceil(Math.abs(minData - minTick) / tickStep);
+
+      range(0, stepsMissingMin, 1).forEach(() => {
+        // add new min tick
+        ticks = [ minTick - tickStep, ...ticks];
+        // update the min tick
+        minTick = ticks[0];
+      });
+    }
+
+    // add the missing ticks between maxData and maxTick
+    if (maxData > maxTick) {
+      // ceil the number of steps needed
+      const stepsMissingMin = Math.ceil(Math.abs(maxData - maxTick) / tickStep);
+
+      range(0, stepsMissingMin, 1).forEach(() => {
+        // add new max tick
+        ticks = [ ...ticks, maxTick + tickStep];
+        // update the max tick
+        maxTick = ticks[ticks.length - 1];
+      });
+    }
+
+    // add a tick at each of the ends - this creates a margin for the words
+    // so that they do not overlap with main words
+    ticks = [ticks[0] - tickStep, ...ticks, ticks[ticks.length - 1] + tickStep];
+
     return ticks;
+  }
+
+  function _createColorRange(scoreExtent) {
+    const maxAbs = Math.max(Math.abs(scoreExtent[0]), Math.abs(scoreExtent[1]));
+
+    // symmmetric score extent where 0 is in the middle
+    const symmetricScoreExtent = [-maxAbs, maxAbs];
+
+    // symmetric score scale for symmetric colors in params
+    const symmetricColorScale = scaleLinear()
+      .domain(symmetricScoreExtent)
+      .range(_params.score.color);
+
+    // color for given min score
+    const minScoreColor = symmetricColorScale(scoreExtent[0]);
+    // color for given max score
+    const maxScoreColor = symmetricColorScale(scoreExtent[1]);
+    // assymmetric colors for given score extent
+    const scoreExtentColors = [minScoreColor, maxScoreColor];
+
+    return scoreExtentColors;
   }
 
   function _getBoundingBox(word) {
@@ -166,11 +227,14 @@ function OppositeViz(data, params) {
         newLegendText = newLegendText.replace(/%w2/g, mainWords[1].text);
       }
 
-      let x = i * (_params.viz.width / 2);
+      // place the middle word in the place where score is 0, that means in the middle of the scale
+      let x = _params.viz.width / 2 + _scale.scoreRange(0);
 
       if (i === 0) {
+        // place the text with the first main word to the left side, belove the word
         x = i * (_params.viz.width / 2) - _params.viz.mainWordWidth;
       } else if (i === _params.score.showText.length - 1) {
+        // place the text with the second main word to the left side, belove the word
         x = i * (_params.viz.width / 2) + _params.viz.mainWordWidth;
       }
 
@@ -204,7 +268,8 @@ function OppositeViz(data, params) {
       height: height,
       text: word.text,
       score: word.score,
-      words: word.words
+      words: word.words,
+      id: word.words[0].id // both words' id are the same
     };
   }
 
@@ -220,7 +285,7 @@ function OppositeViz(data, params) {
         freq: word.words[0].freq,
         score: word.score,
         color: _params.circle.color[1],
-        id: word.words[0].id,
+        id: `${word.words[0].id}__0`,
         text: word.text,
         wordX: word.x,
         wordY: word.y
@@ -232,7 +297,7 @@ function OppositeViz(data, params) {
         freq: word.words[1].freq,
         score: word.score,
         color: _params.circle.color[0],
-        id: word.words[1].id,
+        id: `${word.words[1].id}__1`,
         text: word.text,
         wordX: word.x,
         wordY: word.y
@@ -275,13 +340,16 @@ function OppositeViz(data, params) {
     scoreRange = extent([].concat(...scoreRange));
 
     // update the number of ticks
-    const scoreTicks = _getEvenScoreTicks(scoreRange);
+    const scoreTicks = _getScoreTicks(scoreRange);
 
     // store the ticks
     _ticks.score = scoreTicks;
 
     // update the range - take the range from updated ticks
     scoreRange = extent(scoreTicks);
+
+    // adjusted color range for score range that could be assymetric
+    const scoreColors = _createColorRange(scoreRange);
 
     _scale.freqRadius = scaleSqrt()
       .domain(freqRange)
@@ -301,7 +369,7 @@ function OppositeViz(data, params) {
 
     _scale.scoreBackgroundColor = scaleLinear()
       .domain(scoreRange)
-      .range(_params.score.color);
+      .range(scoreColors);
   }
 
   function _addPositions(wordsInCategory, i) {
