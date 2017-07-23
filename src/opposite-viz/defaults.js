@@ -2,7 +2,7 @@ const defaultParams = {
   viz: {
     divId: 'viz-container',
     svgId: 'ske-viz-opposite',
-    className: 'wswiff-viz',
+    className: 'viz-opposite',
     width: 800,
     height: 500,
     margin: { top: 80, right: 50, bottom: 60, left: 50 },
@@ -18,7 +18,7 @@ const defaultParams = {
     color: 'rgb(255, 255, 255)',
     size: [13, 25],
     mainWordSize: 25,
-    font: 'Metrophobic, sans-serif',
+    font: 'Helvetica, Arial, sans-serif',
     mouseover: undefined,
     mouseout: undefined,
     mouseclick: undefined
@@ -40,9 +40,9 @@ const defaultParams = {
     color: ['rgb(13, 108, 120)', 'rgb(175, 128, 30)'],
     showNumbers: false,
     showText: [
-      '← mostly with %w2 only',
+      '← mostly with %w2',
       'equally frequently with %w1 and %w2',
-      'mostly with %w1 only →'
+      'mostly with %w1 →'
     ]
   },
   category: {
