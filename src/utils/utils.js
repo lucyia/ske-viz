@@ -1,5 +1,23 @@
 import { scaleLinear } from 'd3-scale';
 
+function isObject(value) {
+  return (typeof value === 'object') && (!Array.isArray(value));
+}
+
+function cloneValueToVariable(variable, param, value) {
+  // new value has to be duplicated, not only assigned to a reference that could change
+  if (isObject(value)) {
+    // duplicate an object
+    variable[param] = Object.assign({}, value);
+  } else if (Array.isArray(value)) {
+    // duplicate an array
+    variable[param] = value.slice();
+  } else {
+    // other values can be just assigned
+    variable[param] = value;
+  }
+}
+
 function getNewParams(defaultParams, params) {
   // new object holding all parameters - either
   let newParams = {};
@@ -10,21 +28,16 @@ function getNewParams(defaultParams, params) {
 
     for (let param in defaultParams[type]) {
       if (params && params[type] && params[type][param] !== undefined) {
-        newParams[type][param] = params[type][param];
+        // create from custom values given in params
+        const customValue = params[type][param];
+
+        cloneValueToVariable(newParams[type], param, customValue);
+
       } else {
+        // create from default values
         const newValue = defaultParams[type][param];
 
-        // new values have to be duplicated, not only assigned to a reference that could change
-        if (typeof newValue === 'object' && !Array.isArray(newValue)) {
-          // duplicate an object
-          newParams[type][param] = Object.assign({}, newValue);
-        } else if (Array.isArray(newValue)) {
-          // duplicate an array
-          newParams[type][param] = newValue.slice();
-        } else {
-          // other values can be just assigned
-          newParams[type][param] = newValue;
-        }
+        cloneValueToVariable(newParams[type], param, newValue);
       }
     }
   }
