@@ -3,7 +3,7 @@ import { scaleLinear, scaleSqrt } from 'd3-scale';
 import { extent, range } from 'd3-array';
 
 // internal helper functions
-import { createSVG, drawShape } from '../utils/shape-service';
+import ShapeService from '../utils/shape-service';
 import { circleCollision, rectangleCollision, getNewParams } from '../utils/utils';
 
 // internal functions and params for viz
@@ -19,6 +19,7 @@ import { wordCircles, wordTexts, categoryName, mainWordsBackground, mainWordsTex
  */
 function OppositeViz(data, params) {
 
+  let _shapeService;
   let _params;
   let _data;
 
@@ -161,7 +162,7 @@ function OppositeViz(data, params) {
     };
 
     // draw the text into SVG
-    drawShape([word], textParams, false);
+    _shapeService.drawShape([word], textParams, false);
 
     // default width is the length of the word
     let width = word.text.length;
@@ -438,7 +439,7 @@ function OppositeViz(data, params) {
 
       const mainWords = _createMainWords();
 
-      createSVG(_params.viz, svgId);
+      _shapeService.createSVG(_params.viz, svgId);
 
       _addPositions(wordsInCategory, i);
 
@@ -446,7 +447,7 @@ function OppositeViz(data, params) {
       const bckgData = scoreBackground(`score-bg__rect-${ i }`, _params, _scale);
 
       // draw background rectangles for score  and put them in a group
-      drawShape(_createScoreBackground(i), bckgData, true);
+      _shapeService.drawShape(_createScoreBackground(i), bckgData, true);
 
       if (_params.score.showNumbers) {
         // create an array of tick values
@@ -457,14 +458,14 @@ function OppositeViz(data, params) {
         const scoreLegendTicksNumbersData = scoreLegendNumbers(`score-tick__text-${ i }`, _params);
 
         // draw rectangles and numbers as legend and put them in a group
-        drawShape(scoreLegendTickValues, scoreLegendTicksData, true);
-        drawShape(scoreLegendTickValues, scoreLegendTicksNumbersData, true);
+        _shapeService.drawShape(scoreLegendTickValues, scoreLegendTicksData, true);
+        _shapeService.drawShape(scoreLegendTickValues, scoreLegendTicksNumbersData, true);
       } else if (_params.score.showText) {
         // create an array of text values
         const scoreLegendTextData = scoreLegendText(`legend-text-${ i }`, _params);
 
         // draw text as legend and put them in a group
-        drawShape(_createScoreLegendText(), scoreLegendTextData, true);
+        _shapeService.drawShape(_createScoreLegendText(), scoreLegendTextData, true);
       }
 
       if (_params.category.showName) {
@@ -476,21 +477,21 @@ function OppositeViz(data, params) {
         const categoryNameData = categoryName(`category__text-${ i }`, _params);
 
         // draw text of the category and put them in a group
-        drawShape(categoryNameTexts, categoryNameData, true);
+        _shapeService.drawShape(categoryNameTexts, categoryNameData, true);
       }
 
       // create data objects with parameters for main words background
       const mainWordsData = mainWordsBackground(`main-word__rect-${ i }`, _params);
 
       // draw rectangles of the main words and put them in a group
-      drawShape(mainWords, mainWordsData, true);
+      _shapeService.drawShape(mainWords, mainWordsData, true);
 
       if (_params.circle.show) {
         // create data objects with parameters for word circles
         const wordCirclesData = wordCircles(`word__circles-${ i }`, _params, _scale);
 
         // draw circles of the words and put them in a group
-        drawShape(_rendering.circles[i], wordCirclesData, true);
+        _shapeService.drawShape(_rendering.circles[i], wordCirclesData, true);
       }
 
       if (_params.text.show) {
@@ -500,11 +501,13 @@ function OppositeViz(data, params) {
         const wordsTextData = wordTexts(`word__text-${ i }`, _params, _scale);
 
         // draw the text of main words and all other words and put them in separate groups
-        drawShape(mainWords, mainWordsTextData, true);
-        drawShape(_rendering.texts[i], wordsTextData, true);
+        _shapeService.drawShape(mainWords, mainWordsTextData, true);
+        _shapeService.drawShape(_rendering.texts[i], wordsTextData, true);
       }
     });
   }
+
+  _shapeService = ShapeService();
 
   _params = getNewParams(defaultParams, params);
   // update the width - don't include the panels for main words
