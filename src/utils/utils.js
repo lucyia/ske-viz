@@ -35,9 +35,9 @@ function getNewParams(defaultParams, params) {
 
       } else {
         // create from default values
-        const newValue = defaultParams[type][param];
+        const defaultValue = defaultParams[type][param];
 
-        cloneValueToVariable(newParams[type], param, newValue);
+        cloneValueToVariable(newParams[type], param, defaultValue);
       }
     }
   }
@@ -88,6 +88,13 @@ function randomAngle() {
   return Math.random() * Math.PI * 2;
 }
 
+function pointOnCircle(radius, angle) {
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius
+  };
+}
+
 function randomPointOnCircle(radius, range) {
   const scale = scaleLinear()
     .domain([0, Math.PI * 2])
@@ -95,16 +102,14 @@ function randomPointOnCircle(radius, range) {
 
   const angle = scale(randomAngle());
 
-  return {
-    x: Math.cos(angle) * radius,
-    y: Math.sin(angle) * radius
-  };
+  return pointOnCircle(radius, angle);
 }
 
 export {
   getNewParams,
   circleCollision,
   circleOverlap,
+  pointOnCircle,
   randomPointOnCircle,
   randomAngle,
   rectangleCollision
