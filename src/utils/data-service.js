@@ -3,7 +3,7 @@ import { json } from 'd3-request';
 const _parseWord = (data, category) => {
   let word = {
     text: data.word,
-    freq: data.freq ? data.freq : data.count,
+    freq: data.freq || data.count,
     score: data.score,
     id: data.id
   };
@@ -37,11 +37,19 @@ const _parseWSDiffWord = (data) => {
   };
 };
 
-const _parseCategory = (data) => {
+const _parseCategory = (data, sketchClusterWord) => {
+  // Thes contains category name in 'word' param; Sketch contains it in name param
+  const name = data.name || data.word;
+
+  // Sketch should include category name along with clustered word
+  // Thes category's name is the clustered word, so it doesn't need to be added
+  const text = sketchClusterWord ? `${name} (${sketchClusterWord})` : name;
+
   return {
-    freq: data.count,
+    name,
+    text,
     score: data.score,
-    name: data.name
+    freq: data.freq || 0
   };
 };
 
@@ -54,11 +62,14 @@ const _parseThesWords = (rawWords) => {
   if (clustered) {
     // array of arrays - each array represents one cluster
     words = rawWords.map(wordsInCluster => {
+      // add the information about the cluster into an object
+      const category = _parseCategory(wordsInCluster);
+
       // add all words from the cluster
-      let cluster = wordsInCluster.Clust ? wordsInCluster.Clust.map(d => _parseWord(d)) : [];
+      let cluster = wordsInCluster.Clust ? wordsInCluster.Clust.map(word => _parseWord(word, category)) : [];
 
       // add the word that is main for the current cluster and indicate that
-      let mainWordInCluster = _parseWord(wordsInCluster);
+      let mainWordInCluster = _parseWord(wordsInCluster, category);
 
       mainWordInCluster.mainInCluster = true;
       cluster.push(mainWordInCluster);
@@ -83,10 +94,10 @@ const _parseSketchWords = (rawWords, mainWord) => {
     words = [];
 
     rawWords.forEach(wordsInCategory => {
-      const category = _parseCategory(wordsInCategory);
-
       // the clustered words are inside the words object
       wordsInCategory.Words.forEach(wordsInCluster => {
+        const category = _parseCategory(wordsInCategory, wordsInCluster.word);
+
         // create a cluster of the words, if there is not the Clust array, then create an empty array
         const cluster = wordsInCluster.Clust ? wordsInCluster.Clust.map(word => _parseWord(word, category)) : [];
 
