@@ -7,22 +7,34 @@ const env = require('yargs').argv.env; // use --env with webpack 2
 
 let libraryName = 'ske-viz';
 
-let plugins = [], outputFile;
+let plugins = [];
+let outputFile;
+let entryPoints;
 
 if (env === 'build') {
   plugins.push(new UglifyJsPlugin({ minimize: true }));
+
   outputFile = libraryName + '.min.js';
+
+  entryPoints = [
+    'webpack-dev-server/client?http://localhost:8080',
+    __dirname + '/src/index.js'
+  ];
+
 } else {
   outputFile = libraryName + '.js';
+
+  // for devel include demo
+  entryPoints = [
+    'webpack-dev-server/client?http://localhost:8080',
+    __dirname + '/demo',
+    __dirname + '/src/index.js'
+  ];
 }
 
 const config = {
   context: __dirname,
-  entry: [
-    'webpack-dev-server/client?http://localhost:8080',
-    __dirname + '/demo',
-    __dirname + '/src/index.js'
-  ],
+  entry: entryPoints,
   devtool: 'source-map',
   devServer: {
     contentBase: './',
