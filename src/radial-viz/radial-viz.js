@@ -38,7 +38,7 @@ function RadialViz(data, params) {
     texts: undefined
   };
 
-  function _getBoundingBox(word) {
+  function _getBoundingBox(word, mainWord) {
     const id = 'bbox_text_id';
     // render a text to get its bounding box
     const textParams = {
@@ -48,7 +48,15 @@ function RadialViz(data, params) {
         id: d => id,
         x: d => 0,
         y: d => 0,
-        fontSize: d => _scale.fontSize(d.freq),
+        fontSize: d => {
+          if (mainWord) {
+            // main word has a different fontSize, depending whether scaling it should be applied or not
+            return _params.circle.includeMainWord ? _scale.fontSize(d.freq) : _scale.fontSize.range()[0];
+          }
+
+          // word texts are scaled according to their freq
+          return _scale.fontSize(d.freq);
+        },
         fontFamily: d => _params.text.font,
         text: d => d.text
       }
@@ -93,15 +101,18 @@ function RadialViz(data, params) {
       .domain(freqRange)
       .range(_params.circle.size);
 
+    // if text should be scaled, take values from params; if it shouldn't, take lower bound for both bounds
+    const fontSizeRange = _params.text.scale ? _params.text.size : [_params.text.size[0], _params.text.size[0]];
+
     _scale.fontSize = scaleLinear()
       .domain(freqRange)
-      .range(_params.text.size);
+      .range(fontSizeRange);
 
     // then initialize all other scales
     const scoreRange = extent(range(_data, 'score', false));
 
     const minScoreRadius = _params.circle.includeMainWord
-      ? _scale.freqRadius(_data.mainWord.freq) * 1.75
+      ? _scale.freqRadius(freqRange[1]) * 1.75
       : _params.circle.spaceAroundCentre;
 
     _scale.scoreRadius = scaleLinear()
@@ -113,8 +124,8 @@ function RadialViz(data, params) {
       .range(_params.circle.color);
   }
 
-  function _createWordText(word) {
-    const { width, height } = _getBoundingBox(word);
+  function _createWordText(word, mainWord) {
+    const { width, height } = _getBoundingBox(word, mainWord);
 
     return {
       x: word.x,
@@ -135,7 +146,7 @@ function RadialViz(data, params) {
     // its position is in the middle at [0, 0] - as they will be translated with half of viz width and height
     _data.mainWord.x = 0;
     _data.mainWord.y = 0;
-    _rendering.texts = [_createWordText(_data.mainWord)];
+    _rendering.texts = [_createWordText(_data.mainWord, true)];
 
     let collided;
     let thresholdReached = 0;
@@ -189,7 +200,7 @@ function RadialViz(data, params) {
         // if no collision of circles detected, continue to detect collisions of texts
         if (collided === undefined) {
           // create text
-          const wordText = _createWordText(word);
+          const wordText = _createWordText(word, false);
 
           // find out if texts collide
           collided = _rendering.texts.find(text => {
@@ -262,7 +273,7 @@ function RadialViz(data, params) {
     // add the positions to the words
     _addPositions();
 
-    // // order the words to be from the inside to the outside
+    // order the words to be from the inside to the outside
     _data.words.forEach(words => words.sort((a, b) => a.score - b.score));
 
     // if categories are enabled, draw them as arcs in the background
@@ -336,7 +347,18 @@ function RadialViz(data, params) {
       // create new array of words
       let newCategoryWords = [];
 
-      words.forEach(word => {
+      // sort words according to the score
+      words.sort((a, b) => a.score - b.score);
+
+      // by default, show all words
+      let shownWords = words;
+
+      // but if parameter specified, take only given number of words for each category
+      if (_params.viz.maxItems) {
+        shownWords = words.slice(0, _params.viz.maxItems);
+      }
+
+      shownWords.forEach(word => {
         let newWord = Object.assign({}, word);
 
         // if categories are created, add the information to each word

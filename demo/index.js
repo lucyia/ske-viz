@@ -3,9 +3,9 @@ import OppositeViz from 'opposite-viz/opposite-viz';
 import RadialViz from 'radial-viz/radial-viz';
 
 const urlWSDiff = './data/wsdiff.json';
-const urlThes = './data/thes_system.json';
-const urlThesClust = './data/thes_system_clust.json';
-const urlSketch = './data/wsketch_system.json';
+const urlThes = './data/thes_estimate.json';
+const urlThesClust = './data/thes_estimate_clust.json';
+const urlSketch = './data/wsketch_distribute.json';
 const urlSketchClust = './data/wsketch_system_clust.json';
 
 const showFirstDiff = {
@@ -73,12 +73,19 @@ parseURL(urlThes, 'THES')
   .then(data => RadialViz(data,
     {
       viz: {
-        divId: 'viz-container-2'
+        divId: 'viz-container-2',
+        maxItems: 5
       },
       circle: {
         mouseover: (d) => console.log('over', d),
         mouseout: (d) => console.log('out', d),
         mouseclick: (d) => console.log('click', d)
+      },
+      text: {
+        scale: true
+      },
+      category: {
+        show: false
       }
     }
   ))
@@ -104,19 +111,21 @@ parseURL(urlSketch, 'SKETCH')
     {
       viz: {
         divId: 'viz-container-4',
-        margin: { top: 120, right: 120, bottom: 120, left: 120 }
+        margin: { top: 120, right: 120, bottom: 120, left: 120 },
+        maxItems: 10
       },
       tick: {
         color: 'rgb(255, 255, 255)'
       },
+      circle: {
+        includeMainWord: false
+      },
       category: {
         show: true,
-        diff: false,
+        diff: true,
         items: [
-          { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
-          { name: 'nouns and verbs modified by "%w"', show: true, color: 'blanchedalmond' },
-          { name: 'verbs with "%w" as object', show: true, color: 'lightsteelblue' },
-          { name: '... is a "%w"', show: true, color: 'pink' }
+          { name: 'prepositional phrases', show: true, color: 'powderblue' },
+          { name: 'usage patterns', show: true, color: 'lightsteelblue' }
         ]
       }
     }
@@ -127,14 +136,18 @@ parseURL(urlSketchClust, 'SKETCH')
     {
       viz: {
         divId: 'viz-container-5',
-        margin: { top: 120, right: 120, bottom: 120, left: 120 }
+        margin: { top: 120, right: 120, bottom: 120, left: 120 },
+        maxItems: 3
       },
       tick: {
         color: 'rgb(255, 255, 255)'
       },
+      circle: {
+        includeMainWord: false
+      },
       category: {
         show: true,
-        diff: false,
+        diff: true,
         items: [
           { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
           { name: 'nouns and verbs modified by "%w"', show: true, color: 'blanchedalmond' }
