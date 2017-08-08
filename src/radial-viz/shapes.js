@@ -210,11 +210,11 @@ function mainWordText(className, params, scale, shapeService) {
       cursor: d => 'pointer',
       text: d => d.text,
       transition: {
-        fontSize: d => params.circle.includeMainWord ? scale.fontSize(d.freq) : params.text.size[1]
+        fontSize: d => params.circle.includeMainWord ? scale.fontSize(d.freq) : scale.fontSize.range()[0]
       }
     },
     update: {
-      fontSize: d => params.circle.includeMainWord ? scale.fontSize(d.freq) : params.text.size[1],
+      fontSize: d => params.circle.includeMainWord ? scale.fontSize(d.freq) : scale.fontSize.range()[0],
       text: d => d.text
     },
     exit: {

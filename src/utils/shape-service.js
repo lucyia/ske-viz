@@ -151,7 +151,7 @@ function ShapeService() {
       // get the text element into which tspan elements should appended to
       const parent = _svg.select(`#${element.id}`);
       // replace any special characters
-      const text = element.text.replace('%w', element.mainWord);
+      const text = element.text ? element.text.replace('%w', element.mainWord) : '';
       // create tspan elements
       let rows = text.split(/(\w+\s\w+)/gi);
 

@@ -1,11 +1,11 @@
 import { json } from 'd3-request';
 
-const _parseWord = (data, category) => {
+const _parseWord = (data, category, mainWord) => {
   let word = {
-    text: data.word,
+    text: data.word || (data.name.replace('"%w"', mainWord)),
     freq: data.freq || data.count,
     score: data.score,
-    id: data.id
+    id: data.id || data.seek
   };
 
   if (category) {
@@ -99,10 +99,12 @@ const _parseSketchWords = (rawWords, mainWord) => {
         const category = _parseCategory(wordsInCategory, wordsInCluster.word);
 
         // create a cluster of the words, if there is not the Clust array, then create an empty array
-        const cluster = wordsInCluster.Clust ? wordsInCluster.Clust.map(word => _parseWord(word, category)) : [];
+        const cluster = wordsInCluster.Clust
+          ? wordsInCluster.Clust.map(word => _parseWord(word, category, mainWord))
+          : [];
 
         // add the word that is main for the current cluster and indicate that
-        let mainWordInCluster = _parseWord(wordsInCluster, category);
+        const mainWordInCluster = _parseWord(wordsInCluster, category, mainWord);
 
         mainWordInCluster.mainInCluster = true;
         cluster.push(mainWordInCluster);
@@ -116,7 +118,7 @@ const _parseSketchWords = (rawWords, mainWord) => {
     words = rawWords.map(wordsInCategory => {
       const category = _parseCategory(wordsInCategory);
 
-      return wordsInCategory.Words.map(word => _parseWord(word, category));
+      return wordsInCategory.Words.map(word => _parseWord(word, category, mainWord));
     });
   }
 
