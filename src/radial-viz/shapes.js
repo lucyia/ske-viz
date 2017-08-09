@@ -2,11 +2,56 @@ import { color } from 'd3-color';
 import { select } from 'd3-selection';
 import { arc } from 'd3-shape';
 
+function _getCategoryColor(word, categoryIndex, params) {
+  let color;
+
+  if (typeof params.category.color === 'string') {
+    color = params.category.color;
+  } else {
+    color = params.category.color[categoryIndex];
+  }
+
+  if (params.category.show && params.category.items) {
+    const item = params.category.items.find(item => item.name === word.data[0].category.name);
+
+    // determine the color - if the item is not found or it doesn't contain color value, assign default color
+    color = item ? (item.hasOwnProperty('color') ? item.color : color) : color;
+  }
+
+  return color;
+}
+
+function _getWordCircleColor(d, params, scale) {
+  if (params.circle.categoryColor) {
+    return _getCategoryColor(d.category, d.category.index, params);
+  }
+
+  return scale.scoreColor(d.score);
+}
+
+function _getWordCircleOpacity(d, params, scale) {
+  if (params.circle.categoryColor) {
+    return scale.scoreOpacity(d.score);
+  }
+
+  return 1;
+}
+
 function _getCircleColorHovered(d, params, scale) {
+  let color;
+
   // main word doesn't have score but it's color is the same as the closest word, therefore take the smallest score
   const score = d.score || scale.scoreRadius.domain()[0];
 
-  return color(scale.scoreColor(score)).darker(0.6);
+  if (params.circle.categoryColor) {
+    // color according to the category color
+    color = _getWordCircleColor(d, params, scale);
+  } else {
+    // color according to the score value
+    color = color(scale.scoreColor(score)).darker(0.6);
+  }
+
+  return color;
 }
 
 function _textMouseover(interactedText, d, shapeService, params, scale) {
@@ -107,25 +152,6 @@ function _wordInsideTickHighlight(word, tick, tickDifference) {
   return wordInHightlightArea;
 }
 
-function _getCategoryColor(word, categoryIndex, params) {
-  let color;
-
-  if (typeof params.category.color === 'string') {
-    color = params.category.color;
-  } else {
-    color = params.category.color[categoryIndex];
-  }
-
-  if (params.category.show && params.category.items) {
-    const item = params.category.items.find(item => item.name === word.data[0].category.name);
-
-    // determine the color - if the item is not found or it doesn't contain color value, assign default color
-    color = item ? (item.hasOwnProperty('color') ? item.color : color) : color;
-  }
-
-  return color;
-}
-
 function wordCircles(className, params, scale, shapeService) {
   return {
     shape: 'circle',
@@ -134,7 +160,8 @@ function wordCircles(className, params, scale, shapeService) {
       id: d => 'word__circle-' + d.id,
       cx: d => params.viz.width / 2 + d.x,
       cy: d => params.viz.height / 2 + d.y,
-      fill: d => scale.scoreColor(d.score),
+      fill: d => _getWordCircleColor(d, params, scale),
+      fillOpacity: d => _getWordCircleOpacity(d, params, scale),
       r: d => 0,
       transition: {
         delay: (d, i) => i * 30 + 500,
@@ -280,6 +307,7 @@ function categoryArcs(className, params, scale, shapeService) {
       stroke: (d, i) => color(_getCategoryColor(d, i, params)).darker(0.07),
       strokeWidth: d => params.category.strokeWidth,
       fill: (d, i) => _getCategoryColor(d, i, params),
+      fillOpacity: d => params.category.fillOpacity,
       transform: () =>
         `rotate(90 ${ params.viz.width / 2 } ${ params.viz.height / 2 })
          translate(${ params.viz.width / 2 }, ${ params.viz.height / 2 })`
@@ -289,7 +317,7 @@ function categoryArcs(className, params, scale, shapeService) {
       // all other one will be more opaque
       shapeService.updateShape('.word__circle', {
         fill: word => word.category.text === category.text
-          ? scale.scoreColor(word.score)
+          ? _getWordCircleColor(word, params, scale)
           : params.tick.color
       }, true);
 
@@ -308,21 +336,21 @@ function categoryArcs(className, params, scale, shapeService) {
 
       // highlight only the selected arc
       shapeService.updateShape(select(this), {
-        fill: d => _getCategoryColor(d, 0, params),
-        stroke: d => _getCategoryColor(d, 0, params)
+        fill: d => _getCategoryColor(d, category.index, params),
+        stroke: d => _getCategoryColor(d, category.index, params)
       }, true);
 
     },
     mouseout: (d) => {
       // reset the arcs' color
       shapeService.updateShape('.category__arc', {
-        fill: arc => _getCategoryColor(arc, 0, params),
-        stroke: arc => color(_getCategoryColor(arc, 0, params)).darker(0.07)
+        fill: (arc, i) => _getCategoryColor(arc, i, params),
+        stroke: (arc, i) => color(_getCategoryColor(arc, i, params)).darker(0.07)
       }, true);
 
       // reset circles' color
       shapeService.updateShape('.word__circle', {
-        fill: word => scale.scoreColor(word.score)
+        fill: word => _getWordCircleColor(word, params, scale)
       }, true);
 
       // reset texts' color
@@ -341,7 +369,7 @@ function categoryTexts(className, params, scale, shapeService) {
       id: d => d.id,
       x: d => params.viz.width / 2 + d.x,
       y: d => params.viz.height / 2 + d.y,
-      fill: d => color(params.category.color).darker(0.7),
+      fill: d => color(params.tick.color).darker(0.7),
       fontSize: d => params.category.labelSize,
       fontFamily: d => params.text.font,
       fontWeight: d => 'bold',

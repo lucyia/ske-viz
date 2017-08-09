@@ -2,7 +2,7 @@ import { parseURL } from 'utils/data-service';
 import OppositeViz from 'opposite-viz/opposite-viz';
 import RadialViz from 'radial-viz/radial-viz';
 
-const urlWSDiff = './data/wsdiff.json';
+const urlWSDiff = './data/wsdiff_house_home.json';
 const urlThes = './data/thes_estimate.json';
 const urlThesClust = './data/thes_estimate_clust.json';
 const urlSketch = './data/wsketch_distribute.json';
@@ -14,7 +14,8 @@ const showFirstDiff = {
     svgId: 'ske-viz-opposite-0',
     className: 'wsdiff-viz-0',
     animation: false,
-    margin: { top: 80, right: 50, bottom: 60, left: 50 }
+    margin: { top: 80, right: 50, bottom: 60, left: 50 },
+    maxItems: 5
   },
   category: {
     showItems: [0]
@@ -38,7 +39,8 @@ const showAllDiff = {
   viz: {
     divId: 'viz-container-1',
     svgId: 'ske-viz-opposite-1',
-    className: 'wswiff-viz-1'
+    className: 'wswiff-viz-1',
+    maxItems: 10
   }
 };
 
@@ -100,7 +102,7 @@ parseURL(urlThesClust, 'THES')
       },
       category: {
         show: true,
-        diff: false
+        differentAngles: false
       }
     }
   ))
@@ -112,21 +114,29 @@ parseURL(urlSketch, 'SKETCH')
       viz: {
         divId: 'viz-container-4',
         margin: { top: 120, right: 120, bottom: 120, left: 120 },
-        maxItems: 10
+        maxItems: 5
       },
       tick: {
-        color: 'rgb(255, 255, 255)'
+        color: 'rgb(200, 200, 200)',
+        opacity: 0.3
       },
       circle: {
-        includeMainWord: false
+        scale: true,
+        includeMainWord: false,
+        categoryColor: true
+      },
+      text: {
+        scale: true
       },
       category: {
         show: true,
-        diff: true,
-        items: [
-          { name: 'prepositional phrases', show: true, color: 'powderblue' },
-          { name: 'usage patterns', show: true, color: 'lightsteelblue' }
-        ]
+        differentAngles: true,
+        showItems: [1, 2],
+        color: ['rgb(33, 150, 243)', 'rgb(50, 200, 200)', 'rgb(0, 150, 136)']
+        // items: [
+        //   { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
+        //   { name: 'subjects of "%w"', show: true, color: 'blanchedalmond' }
+        // ]
       }
     }
   ));
@@ -147,7 +157,7 @@ parseURL(urlSketchClust, 'SKETCH')
       },
       category: {
         show: true,
-        diff: true,
+        differentAngles: true,
         items: [
           { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
           { name: 'nouns and verbs modified by "%w"', show: true, color: 'blanchedalmond' }

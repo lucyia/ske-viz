@@ -7,7 +7,8 @@ const defaultParams = {
     height: 500,
     margin: { top: 80, right: 50, bottom: 60, left: 50 },
     mainWordWidth: 60,
-    animation: true
+    animation: true,
+    maxItems: undefined
   },
   tick: {
     number: 7

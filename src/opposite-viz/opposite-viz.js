@@ -526,6 +526,17 @@ function OppositeViz(data, params) {
     });
   }
 
+  if (_params.viz.maxItems) {
+    // update the number of words in each category
+    _data.words.forEach(category => {
+      // sort words according to the score values - sort from zero to the biggest absolute number
+      category.words.sort((a, b) => Math.abs(a.score) - Math.abs(b.score));
+
+      // update the words - take only the first most common (value around zero) according to given maxItems value
+      category.words = category.words.slice(0, _params.viz.maxItems);
+    });
+  }
+
   _initScales();
 
   _draw();
