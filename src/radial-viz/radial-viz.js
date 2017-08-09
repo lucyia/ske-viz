@@ -29,6 +29,7 @@ function RadialViz(data, params) {
   let _scale = {
     scoreRadius: undefined,
     scoreColor: undefined,
+    scoreOpacity: undefined,
     freqRadius: undefined,
     fontSize: undefined
   };
@@ -97,12 +98,19 @@ function RadialViz(data, params) {
       range(_data, 'freq', _params.circle.includeMainWord)
     );
 
+    // if circles should be scaled, takze values from params; if they shouln't, take the lower bound for both bounds
+    const freqRadiusRange = _params.circle.scale
+      ? _params.circle.size
+      : [_params.circle.size[0], _params.circle.size[0]];
+
     _scale.freqRadius = scaleSqrt()
       .domain(freqRange)
-      .range(_params.circle.size);
+      .range(freqRadiusRange);
 
     // if text should be scaled, take values from params; if it shouldn't, take lower bound for both bounds
-    const fontSizeRange = _params.text.scale ? _params.text.size : [_params.text.size[0], _params.text.size[0]];
+    const fontSizeRange = _params.text.scale
+      ? _params.text.size
+      : [_params.text.size[0], _params.text.size[0]];
 
     _scale.fontSize = scaleLinear()
       .domain(freqRange)
@@ -122,6 +130,10 @@ function RadialViz(data, params) {
     _scale.scoreColor = scaleLinear()
       .domain(scoreRange)
       .range(_params.circle.color);
+
+    _scale.scoreOpacity = scaleLinear()
+      .domain(scoreRange)
+      .range([1, 0.3]);
   }
 
   function _createWordText(word, mainWord) {
@@ -298,6 +310,7 @@ function RadialViz(data, params) {
           name: category.name,
           text: category.text,
           mainWord: _data.mainWord.text,
+          index: i,
           x: point.x,
           y: point.y
         };
@@ -391,7 +404,8 @@ function RadialViz(data, params) {
     let updatedData = {};
     let filteredWords = [];
 
-    data.words.forEach(words => {
+    data.words.forEach((words, categoryIndex) => {
+
       let categoryVisible = false;
 
       if (words.length) {
@@ -399,10 +413,26 @@ function RadialViz(data, params) {
         const name = words[0].category.name;
 
         // find the category settings from the params
-        const category = _params.category.items.find(category => category.name === name);
+        // 1) it can be defined either by the name in "category.items"
+        const category = _params.category.items
+          ? _params.category.items.find(category => category.name === name)
+          : false;
+
+        // if category item is found get the info if it should be shown
+        const categoryNameDefined = category
+          ? category.show
+          : false;
+
+        // find the category settings from the params
+        // 2) it can be defined as an index in "category.showItems"
+        const categoryIndexDefined = _params.category.showItems
+          ? _params.category.showItems.includes(categoryIndex)
+          : false;
 
         // if the category is not defined in the params, it should be not shown by default
-        categoryVisible = category ? category.show : false;
+        if (categoryNameDefined || categoryIndexDefined) {
+          categoryVisible = true;
+        }
       }
 
       // only if the category should be shown, add the words to the new array of words
@@ -419,6 +449,9 @@ function RadialViz(data, params) {
   }
 
   function _calculateCategoryParams(data) {
+    // adjust the padAngle so that strokes do not overlap each other
+    let padAngle = _params.category.strokeWidth / 200;
+
     // create a function that creates the pie arc objects
     // value - get all frequencies summed up for a given category
     const pieShape = pie()
@@ -427,7 +460,7 @@ function RadialViz(data, params) {
         // if the frequency differene should not be shown, assign the same number to all of the words categories
         let value = 1;
 
-        if (_params.category.diff) {
+        if (_params.category.differentAngles) {
           // if the frequency diff should be shown, assign the sum of all frequencies to the value
           value = words.reduce((sum, word) => sum + word.freq, 0);
         }
@@ -438,7 +471,8 @@ function RadialViz(data, params) {
     // move the start and end angle so that the result does not resemble a "target" when showing four categories
     pieShape
       .startAngle(Math.PI / 4)
-      .endAngle(Math.PI * 2 + Math.PI / 4);
+      .endAngle(Math.PI * 2 + Math.PI / 4)
+      .padAngle(padAngle);
 
     // return new array where for each category
     // there is an object containing information about its renderable arc
@@ -454,9 +488,8 @@ function RadialViz(data, params) {
   let shownData = Object.assign({}, data);
 
   if (_params.category.show) {
-
     // if there are items specified, filter only the given categories into the shown data
-    if (_params.category.items) {
+    if (_params.category.items || _params.category.showItems) {
       shownData = _filterData(data);
     }
 
