@@ -17,7 +17,6 @@ if (env === 'build') {
   outputFile = libraryName + '.min.js';
 
   entryPoints = [
-    'webpack-dev-server/client?http://localhost:8080',
     __dirname + '/src/index.js'
   ];
 

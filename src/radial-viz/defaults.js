@@ -30,7 +30,7 @@ const defaultParams = {
     show: true,
     scale: true,
     categoryColor: false, // if true, then color values defined below are ignored, only colors from category are taken
-    color: ['rgb(50, 200, 200)', 'rgb(200, 20, 200)'],
+    color: ['rgb(200, 20, 200)', 'rgb(50, 200, 200)'],
     size: [5, 40],
     strokeWidth: 5,
     includeMainWord: true,

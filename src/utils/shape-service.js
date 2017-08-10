@@ -1,5 +1,6 @@
 import { select } from 'd3-selection';
 import { transition } from 'd3-transition';
+import { easeBackOut } from 'd3-ease';
 
 import kebabCase from 'lodash/kebabCase';
 
@@ -58,6 +59,7 @@ function ShapeService() {
       } else {
         shapesSelection
           .transition(_transition)
+          .ease(easeBackOut)
           .attr(param, value);
       }
     }
@@ -79,6 +81,7 @@ function ShapeService() {
         // define transition selection
         const enterShapeTransitioned = enterShape
           .transition(_transition)
+          .ease(easeBackOut)
           .delay(delay);
 
         for (let transitionParameter in shapeParams.enter.transition) {
@@ -107,16 +110,24 @@ function ShapeService() {
   }
 
   function drawShape(data, shapeParams, createGroup) {
+    const groupName = `group-${shapeParams.class}`;
+
     let shapesGroup = _svg;
 
     if (createGroup) {
-      shapesGroup = _svg.append('g')
-        .attr('class', `group-${shapeParams.class}`);
+      // if group should be created, append it into svg
+      shapesGroup = _svg.append('g').attr('class', groupName);
+    } else {
+      // otherwise group is created, so only select it
+      shapesGroup = _svg.select(`.${groupName}`);
     }
 
     // bind the data with the selection
     let shapesSelection = shapesGroup.selectAll(`.${shapeParams.class}`)
-      .data(data);
+      .data(data, (d, i) => {
+        // the key is the id of given word, if it exists; if not, default iteraction key is returned
+        return d.id ? d.id : i;
+      });
 
     // exit, update and enter the selection
     _exit(shapesSelection, shapeParams);
@@ -138,6 +149,7 @@ function ShapeService() {
       } else {
         shapeSelection
           .transition()
+          .ease(easeBackOut)
           .duration(applyTransition ? 500 : 0)
           .attr(param, value);
 

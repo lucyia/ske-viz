@@ -123,9 +123,10 @@ function RadialViz(data, params) {
       ? _scale.freqRadius(freqRange[1]) * 1.75
       : _params.circle.spaceAroundCentre;
 
+    // highest score is in the middle (closest to the main word); the lower the score, the further away from main word
     _scale.scoreRadius = scaleLinear()
       .domain(scoreRange)
-      .range([minScoreRadius, _params.viz.width / 2]);
+      .range([_params.viz.width / 2, minScoreRadius]);
 
     _scale.scoreColor = scaleLinear()
       .domain(scoreRange)
@@ -133,7 +134,7 @@ function RadialViz(data, params) {
 
     _scale.scoreOpacity = scaleLinear()
       .domain(scoreRange)
-      .range([1, 0.3]);
+      .range([0.3, 1]);
   }
 
   function _createWordText(word, mainWord) {
@@ -278,28 +279,27 @@ function RadialViz(data, params) {
     }
   }
 
-  function _draw() {
-    // draw all shapes, start with SVG container
-    _shapeService.createSVG(_params.viz, _params.viz.svgId);
+  function _draw(initShapes) {
+    if (initShapes) {
+      // draw all shapes, start with SVG container
+      _shapeService.createSVG(_params.viz, _params.viz.svgId);
+    }
 
     // add the positions to the words
     _addPositions();
-
-    // order the words to be from the inside to the outside
-    _data.words.forEach(words => words.sort((a, b) => a.score - b.score));
 
     // if categories are enabled, draw them as arcs in the background
     if (_categories && _params.category.show) {
       const categoryArcsData = categoryArcs('category__arc', _params, _scale, _shapeService);
 
-      _shapeService.drawShape(_categories, categoryArcsData, true);
+      _shapeService.drawShape(_categories, categoryArcsData, initShapes);
     }
 
     if (_categories && _params.category.showLabel) {
       const categoryTextsData = categoryTexts('category__text', _params, _scale);
       const categoryParams = _categories.map((category, i) => {
         // take the max radius and make it bigger so that text doesn't collide with category arc
-        const radius = _scale.scoreRadius.range()[1] + _params.category.labelPadding;
+        const radius = _scale.scoreRadius.range()[0] + _params.category.labelPadding;
         // the angle at which the label will be placed is in the middle between startAngle and endAngle
         const angle = category.startAngle + (category.endAngle - category.startAngle) / 2;
         // get the point the circle according to the given arguments
@@ -316,7 +316,7 @@ function RadialViz(data, params) {
         };
       });
 
-      _shapeService.drawShape(categoryParams, categoryTextsData, true);
+      _shapeService.drawShape(categoryParams, categoryTextsData, initShapes);
       _shapeService.createTspanText(categoryParams, _params);
     }
 
@@ -324,30 +324,34 @@ function RadialViz(data, params) {
       // use the ticks function from score scale to get rounded values for ticks
       const ticksData = _scale.scoreColor.ticks(_params.tick.number);
 
-      // store the distance between two ticks; only if relevant
-      if (ticksData.length > 1) {
-        _params.tick.difference = ticksData[1] - ticksData[0];
-      }
+      // order the ticks from highest score to the lowest (from middle to outside score)
+      ticksData.sort((a, b) => b - a);
+
+      // store the ticks so it is accessible
+      _params.tick.values = ticksData;
 
       const scoreLegendTicksData = scoreLegendTicks('score-tick__circle', _params, _scale, _shapeService);
 
-      _shapeService.drawShape(ticksData, scoreLegendTicksData, true);
+      _shapeService.drawShape(ticksData, scoreLegendTicksData, initShapes);
     }
+
+    // order words so that they are sorted from highest to the lowest scoreLegendTicksData
+    const allWordsSorted = allWords(_data.words).sort((a, b) => b.score - a.score);
 
     if (_params.circle.show) {
       const mainWordCircleData = mainWordCircle('main-word__circle', _params, _scale, _shapeService);
       const wordCirclesData = wordCircles('word__circle', _params, _scale, _shapeService);
 
-      _shapeService.drawShape([_data.mainWord], mainWordCircleData, true);
-      _shapeService.drawShape(allWords(_data.words), wordCirclesData, true);
+      _shapeService.drawShape([_data.mainWord], mainWordCircleData, initShapes);
+      _shapeService.drawShape(allWordsSorted, wordCirclesData, initShapes);
     }
 
     if (_params.text.show) {
       const mainWordTextData = mainWordText('main-word__text', _params, _scale, _shapeService);
       const wordTextsData = wordTexts('word__text', _params, _scale, _shapeService);
 
-      _shapeService.drawShape([_data.mainWord], mainWordTextData, true);
-      _shapeService.drawShape(allWords(_data.words), wordTextsData, true);
+      _shapeService.drawShape([_data.mainWord], mainWordTextData, initShapes);
+      _shapeService.drawShape(allWordsSorted, wordTextsData, initShapes);
     }
   }
 
@@ -361,7 +365,7 @@ function RadialViz(data, params) {
       let newCategoryWords = [];
 
       // sort words according to the score
-      words.sort((a, b) => a.score - b.score);
+      words.sort((a, b) => b.score - a.score);
 
       // by default, show all words
       let shownWords = words;
@@ -479,31 +483,42 @@ function RadialViz(data, params) {
     return pieShape(data);
   }
 
+  function createViz(data, initShapes) {
+    // if category is disabled all data will be shown
+    // duplicate the data so a local copy can be modified without changing the originally data
+    let shownData = Object.assign({}, data);
+
+    if (_params.category.show) {
+      // if there are items specified, filter only the given categories into the shown data
+      if (_params.category.items || _params.category.showItems) {
+        shownData = _filterData(data);
+      }
+
+      // calculate the arc information for categories
+      _categories = _calculateCategoryParams(shownData.words);
+    }
+
+    // prepare the data (add categories if enabled, change the structure - add mainWord and data)
+    _data = _prepareData(shownData);
+
+    _initScales();
+
+    _draw(initShapes);
+  }
+
+  function update(data) {
+    createViz(data, false);
+  }
+
   _shapeService = ShapeService();
 
   _params = getNewParams(defaultParams, params);
 
-  // if category is disabled all data will be shown
-  // duplicate the data so a local copy can be modified without changing the originally data
-  let shownData = Object.assign({}, data);
+  createViz(data, true);
 
-  if (_params.category.show) {
-    // if there are items specified, filter only the given categories into the shown data
-    if (_params.category.items || _params.category.showItems) {
-      shownData = _filterData(data);
-    }
-
-    // calculate the arc information for categories
-    _categories = _calculateCategoryParams(shownData.words);
-  }
-
-  // prepare the data (add categories if enabled, change the structure - add mainWord and data)
-  _data = _prepareData(shownData);
-
-  _initScales();
-
-  _draw();
-
+  return {
+    update
+  };
 }
 
 export default RadialViz;
