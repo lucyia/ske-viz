@@ -1,4 +1,5 @@
 import { json } from 'd3-request';
+import uniqueId from 'lodash/uniqueId';
 
 const _parseWord = (data, category, mainWord) => {
   let word = {
@@ -161,6 +162,7 @@ const parseData = (rawData, type) => {
       func: _parseThesWords,
       words: rawData.Words,
       mainWord: {
+        id: uniqueId(),
         text: rawData.lemma,
         freq: rawData.freq
       }
@@ -169,6 +171,7 @@ const parseData = (rawData, type) => {
       func: _parseSketchWords,
       words: rawData.Gramrels,
       mainWord: {
+        id: uniqueId(),
         text: rawData.lemma,
         freq: rawData.freq
       }
@@ -178,10 +181,12 @@ const parseData = (rawData, type) => {
       words: rawData.content ? rawData.content.common : undefined,
       mainWords: [
         {
+          id: uniqueId(),
           text: rawData.lbl1,
           freq: rawData.frq1
         },
         {
+          id: uniqueId(),
           text: rawData.lbl2,
           freq: rawData.frq2
         }

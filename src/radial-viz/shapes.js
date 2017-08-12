@@ -4,20 +4,20 @@ import { arc } from 'd3-shape';
 
 function _wordInsideTickHighlight(word, tick, ticks) {
   // half of the difference between ticks
-  const tickDiffHalf = ticks.length > 1 ? (ticks[1] - ticks[0]) / 2 : 0;
+  const tickDiffHalf = ticks.length > 1 ? (ticks[1].value - ticks[0].value) / 2 : 0;
 
   // whether the word is around the hovered tick
-  let wordInHightlightArea = word.score <= (tick - tickDiffHalf)
-    && word.score > (tick + tickDiffHalf);
+  let wordInHightlightArea = word.score <= (tick.value - tickDiffHalf)
+    && word.score > (tick.value + tickDiffHalf);
 
   // or the words are outside of the largest tick value - smallest score values than the tick
-  if (tick === ticks[ticks.length - 1]) {
-    wordInHightlightArea = wordInHightlightArea || word.score < tick;
+  if (tick.value === ticks[ticks.length - 1].value) {
+    wordInHightlightArea = wordInHightlightArea || word.score < tick.value;
   }
 
   // or the words are inside - larger score values than the smallest tick
-  if (tick === ticks[0]) {
-    wordInHightlightArea = wordInHightlightArea || word.score > tick;
+  if (tick.value === ticks[0].value) {
+    wordInHightlightArea = wordInHightlightArea || word.score > tick.value;
   }
 
   return wordInHightlightArea;
@@ -66,7 +66,7 @@ function _getCircleColorHovered(d, params, scale) {
     circleColor = _getWordCircleColor(d, params, scale);
   } else {
     // main word doesn't have score but it's color is the same as the closest word, therefore take the smallest score
-    const score = d.score || scale.scoreRadius.domain()[0];
+    const score = d.score || scale.scoreRadius.domain()[1];
 
     // color according to the score value
     circleColor = color(scale.scoreColor(score)).darker(0.6);
@@ -189,6 +189,8 @@ function wordCircles(className, params, scale, shapeService) {
       r: d => scale.freqRadius(d.freq)
     },
     exit: {
+      x: d => params.viz.width / 2,
+      y: d => params.viz.height / 2,
       r: 0
     },
     mouseover: function wordCircleMouseover(d) {
@@ -238,7 +240,10 @@ function wordTexts(className, params, scale, shapeService) {
       opacity: d => 1
     },
     exit: {
-      fontSize: d => 0
+      x: d => params.viz.width / 2,
+      y: d => params.viz.height / 2,
+      fontSize: d => 0,
+      opacity: d => 0
     },
     mouseover: function wordTextMouseover(d) {
       _textMouseover(select(this), d, shapeService, params, scale);
@@ -253,7 +258,9 @@ function wordTexts(className, params, scale, shapeService) {
 }
 
 function mainWordText(className, params, scale, shapeService) {
-  const mainWordFontSize = d => params.circle.includeMainWord ? scale.fontSize(d.freq) : scale.fontSize.range()[0];
+  const mainWordFontSize = d => params.circle.includeMainWord
+    ? scale.fontSize(d.freq)
+    : scale.fontSize.range()[1];
 
   return {
     shape: 'text',
@@ -276,7 +283,7 @@ function mainWordText(className, params, scale, shapeService) {
       text: d => d.text
     },
     exit: {
-      fontSize: d => 0
+      opacity: d => 0
     },
     mouseover: function mainWordTextMouseover(d) {
       _textMouseover(select(this), d, shapeService, params, scale);
@@ -294,12 +301,15 @@ function mainWordCircle(className, params, scale, shapeService) {
   const mainWordX = params.viz.width / 2;
   const mainWordY = params.viz.height / 2;
   const mainWordFill = scale.scoreColor.range()[1];
-  const mainWordRadius = d => params.circle.includeMainWord ? scale.freqRadius(d.freq) : 0;
+  const mainWordRadius = d => params.circle.includeMainWord
+    ? scale.freqRadius(d.freq)
+    : 0;
 
   return {
     shape: 'circle',
     class: className,
     enter: {
+      id: d => `word__circle-${d.id}`,
       cx: d => mainWordX,
       cy: d => mainWordY,
       r: d => 0,
@@ -454,21 +464,34 @@ function categoryTexts(className, params, scale, shapeService) {
 }
 
 function scoreLegendTicks(className, params, scale, shapeService) {
+  const tickColor = d => params.tick.scoreColor
+    ? scale.scoreColor(d.value)
+    : params.tick.color;
+
   return {
     shape: 'circle',
     class: 'tick',
     enter: {
+      id: d => `tick-${d.id}`,
       cx: d => params.viz.width / 2,
       cy: d => params.viz.height / 2,
-      r: d => scale.scoreRadius(d),
+      r: d => scale.scoreRadius(d.value),
       fill: d => 'none',
       stroke: d => 'transparent',
       strokeOpacity: d => params.tick.opacity,
       strokeWidth: d => params.tick.size,
       transition: {
         delay: (d, i) => i * 200 + 900,
-        stroke: d => params.tick.color
+        stroke: d => tickColor(d)
       }
+    },
+    update: {
+      id: d => `tick-${d.id}`,
+      r: d => scale.scoreRadius(d.value),
+      stroke: d => tickColor(d)
+    },
+    exit: {
+      strokeOpacity: 0
     },
     mouseover: function mouseover(tick) {
       // change the color of all ticks

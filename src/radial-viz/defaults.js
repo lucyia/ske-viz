@@ -11,6 +11,7 @@ const defaultParams = {
   },
   tick: {
     show: true,
+    scoreColor: false,
     color: 'rgb(230, 230, 230)',
     opacity: 0.3,
     size: 8,

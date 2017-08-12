@@ -2,6 +2,7 @@
 import { scaleLinear, scaleSqrt } from 'd3-scale';
 import { extent } from 'd3-array';
 import { pie } from 'd3-shape';
+import uniqueId from 'lodash/uniqueId';
 
 // internal helper functions
 import ShapeService from '../utils/shape-service';
@@ -21,6 +22,7 @@ import { wordCircles, mainWordText, wordTexts, mainWordCircle,
  */
 function RadialViz(data, params) {
 
+  let _svg;
   let _shapeService;
   let _params;
   let _data;
@@ -282,7 +284,7 @@ function RadialViz(data, params) {
   function _draw(initShapes) {
     if (initShapes) {
       // draw all shapes, start with SVG container
-      _shapeService.createSVG(_params.viz, _params.viz.svgId);
+      _svg = _shapeService.createSVG(_params.viz, _params.viz.svgId);
     }
 
     // add the positions to the words
@@ -328,11 +330,14 @@ function RadialViz(data, params) {
       ticksData.sort((a, b) => b - a);
 
       // store the ticks so it is accessible
-      _params.tick.values = ticksData;
+      _params.tick.values = ticksData.map(d => ({
+        id: uniqueId(d),
+        value: d
+      }));
 
       const scoreLegendTicksData = scoreLegendTicks('score-tick__circle', _params, _scale, _shapeService);
 
-      _shapeService.drawShape(ticksData, scoreLegendTicksData, initShapes);
+      _shapeService.drawShape(_params.tick.values, scoreLegendTicksData, initShapes);
     }
 
     // order words so that they are sorted from highest to the lowest scoreLegendTicksData
@@ -510,13 +515,19 @@ function RadialViz(data, params) {
     createViz(data, false);
   }
 
-  _shapeService = ShapeService();
+  (function init(data, params) {
+    _shapeService = ShapeService();
 
-  _params = getNewParams(defaultParams, params);
+    _params = getNewParams(defaultParams, params);
 
-  createViz(data, true);
+    createViz(data, true);
+  })(data, params);
 
   return {
+    _svg,
+    _data,
+    _scale,
+    _params,
     update
   };
 }

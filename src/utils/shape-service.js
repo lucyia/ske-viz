@@ -12,6 +12,7 @@ function ShapeService() {
 
   let _svg;
   let _transition;
+  let _animation;
 
   function _getParamValue(param, shapeParams) {
     return {
@@ -33,13 +34,21 @@ function ShapeService() {
       .append('g')
       .attr('transform', `translate(${params.margin.left}, ${params.margin.top})`);
 
-    _transition = transition().duration(1000);
+    _animation = params.animation;
+
+    const duration = params.animation ? 1000 : 0;
+
+    _transition = transition().duration(duration);
+
+    return _svg;
   };
 
   function _exit(shapesSelection, shapeParams) {
     let exitShape = shapesSelection
       .exit()
-      .transition();
+      .transition()
+      .duration(800)
+      .remove();
 
     for (let parameter in shapeParams.exit) {
       const { param, value } = _getParamValue(parameter, shapeParams.exit);
@@ -50,16 +59,18 @@ function ShapeService() {
   }
 
   function _update(shapesSelection, shapeParams) {
+    const selection = shapesSelection
+      .transition(_transition)
+      .ease(easeBackOut);
+
     for (let parameter in shapeParams.update) {
       const { param, value } = _getParamValue(parameter, shapeParams.update);
 
       if (param === 'text') {
-        shapesSelection
+        selection
           .text(value);
       } else {
-        shapesSelection
-          .transition(_transition)
-          .ease(easeBackOut)
+        selection
           .attr(param, value);
       }
     }
@@ -76,7 +87,10 @@ function ShapeService() {
 
       if (param === 'transition') {
         // if there is no delay function defined, do not delay
-        const delay = shapeParams.enter.transition.delay ? shapeParams.enter.transition.delay : 0;
+        let delay = shapeParams.enter.transition.delay ? shapeParams.enter.transition.delay : 0;
+
+        // or if the animation should not run
+        delay = _animation ? delay : 0;
 
         // define transition selection
         const enterShapeTransitioned = enterShape
