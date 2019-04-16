@@ -1,18 +1,53 @@
-// external libraries
-import { scaleLinear, scaleSqrt } from 'd3-scale';
-import { extent } from 'd3-array';
-import { pie } from 'd3-shape';
-import uniqueId from 'lodash/uniqueId';
+import {
+  allWords,
+  range
+} from '../utils/data-service';
+import {
+  categoryArcs,
+  categoryTexts,
+  mainWordCircle,
+  mainWordText,
+  scoreLegendTicks,
+  wordCircles,
+  wordTexts
+} from './shapes';
+import {
+  circleCollision,
+  getNewParams,
+  pointOnCircle,
+  randomPointOnCircle,
+  rectangleCollision
+} from '../utils/utils';
+import {
+  forceCenter,
+  forceCollide,
+  forceManyBody,
+  forceRadial,
+  forceSimulation
+} from 'd3-force';
+import {
+  scaleLinear,
+  scaleSqrt
+} from 'd3-scale';
+import {
+  select,
+  selectAll
+} from 'd3-selection';
 
 // internal helper functions
 import ShapeService from '../utils/shape-service';
-import { allWords, range } from '../utils/data-service';
-import { circleCollision, rectangleCollision, pointOnCircle, randomPointOnCircle, getNewParams } from '../utils/utils';
-
+import {
+  bboxCollide
+} from 'd3-bboxCollide';
 // internal functions and params for viz
 import defaultParams from './defaults';
-import { wordCircles, mainWordText, wordTexts, mainWordCircle,
-  categoryArcs, categoryTexts, scoreLegendTicks } from './shapes';
+import {
+  extent
+} from 'd3-array';
+import {
+  pie
+} from 'd3-shape';
+import uniqueId from 'lodash/uniqueId';
 
 /**
  * RadialViz
@@ -41,59 +76,6 @@ function RadialViz(data, params) {
     texts: undefined
   };
 
-  function _getBoundingBox(word, mainWord) {
-    const id = 'bbox_text_id';
-    // render a text to get its bounding box
-    const textParams = {
-      shape: 'text',
-      class: 'bbox_text',
-      enter: {
-        id: d => id,
-        x: d => 0,
-        y: d => 0,
-        fontSize: d => {
-          if (mainWord) {
-            // main word has a different fontSize, depending whether scaling it should be applied or not
-            return _params.circle.includeMainWord ? _scale.fontSize(d.freq) : _scale.fontSize.range()[0];
-          }
-
-          // word texts are scaled according to their freq
-          return _scale.fontSize(d.freq);
-        },
-        fontFamily: d => _params.text.font,
-        text: d => d.text
-      }
-    };
-
-    // draw the text into SVG
-    _shapeService.drawShape([word], textParams, false);
-
-    // default width is the length of the word
-    let width = word.text.length;
-    // default height is font size
-    let height = _params.text.size[0];
-
-    // get the rendered element
-    const element = document.getElementById(id);
-
-    if (element) {
-      // get the bounding box
-      const bbox = element.getBBox();
-
-      // remove the text from SVG
-      element.parentElement.removeChild(element);
-
-      // update the variables
-      width = bbox.width;
-      height = bbox.height;
-    }
-
-    return {
-      width,
-      height
-    };
-  }
-
   function _initScales() {
     // firstly, initialize scales dependent on radius (will be used for score scales)
     const freqRange = extent(
@@ -101,18 +83,16 @@ function RadialViz(data, params) {
     );
 
     // if circles should be scaled, takze values from params; if they shouln't, take the lower bound for both bounds
-    const freqRadiusRange = _params.circle.scale
-      ? _params.circle.size
-      : [_params.circle.size[0], _params.circle.size[0]];
+    const freqRadiusRange = _params.circle.scale ?
+      _params.circle.size : [_params.circle.size[0], _params.circle.size[0]];
 
     _scale.freqRadius = scaleSqrt()
       .domain(freqRange)
       .range(freqRadiusRange);
 
     // if text should be scaled, take values from params; if it shouldn't, take lower bound for both bounds
-    const fontSizeRange = _params.text.scale
-      ? _params.text.size
-      : [_params.text.size[0], _params.text.size[0]];
+    const fontSizeRange = _params.text.scale ?
+      _params.text.size : [_params.text.size[0], _params.text.size[0]];
 
     _scale.fontSize = scaleLinear()
       .domain(freqRange)
@@ -121,9 +101,9 @@ function RadialViz(data, params) {
     // then initialize all other scales
     const scoreRange = extent(range(_data, 'score', false));
 
-    const minScoreRadius = _params.circle.includeMainWord
-      ? _scale.freqRadius(freqRange[1]) * 1.75
-      : _params.circle.spaceAroundCentre;
+    const minScoreRadius = _params.circle.includeMainWord ?
+      _scale.freqRadius(freqRange[1]) * 1.75 :
+      _params.circle.spaceAroundCentre;
 
     // highest score is in the middle (closest to the main word); the lower the score, the further away from main word
     _scale.scoreRadius = scaleLinear()
@@ -139,21 +119,12 @@ function RadialViz(data, params) {
       .range([0.3, 1]);
   }
 
-  function _createWordText(word, mainWord) {
-    const { width, height } = _getBoundingBox(word, mainWord);
+  function _addDefaultPositions() {
+    const words = allWords(_data.words);
 
-    return {
-      x: word.x,
-      y: word.y,
-      width: width,
-      height: height,
-      text: word.text,
-      score: word.score,
-      id: word.id // both words' id are the same
-    };
-  }
+    // sort all word so that words with biggest sum of freqs are placed first
+    const sortedWords = words.sort((word2, word1) => word1.freq - word2.freq);
 
-  function _findPositions(sortedWords) {
     // initiliaze circles - circles with main word's circle can collide
     _rendering.circles = [];
 
@@ -161,124 +132,196 @@ function RadialViz(data, params) {
     // its position is in the middle at [0, 0] - as they will be translated with half of viz width and height
     _data.mainWord.x = 0;
     _data.mainWord.y = 0;
-    _rendering.texts = [_createWordText(_data.mainWord, true)];
-
-    let collided;
-    let thresholdReached = 0;
+    _rendering.texts = [{
+      x: _data.mainWord.x,
+      y: _data.mainWord.y,
+      width: 60,
+      height: 30,
+      text: _data.mainWord.text,
+      score: _data.mainWord.score,
+      id: _data.mainWord.id // both words' id are the same
+    }];
 
     sortedWords.forEach(word => {
-      // limit for calculating collisions - the more words, the smaller the threshold
-      let threshold = Math.round((1 / (sortedWords.length) ^ 2) * 10);
+      let angleRange;
 
-      // hold circles and text that are colliding
-      collided = {};
+      if (_categories) {
+        const startAngle = word.category.startAngle;
+        const endAngle = word.category.endAngle;
 
-      while (threshold > 0 && collided !== undefined && collided !== undefined) {
-        let angleRange;
-
-        if (_categories) {
-          let startAngle = word.category.startAngle;
-          let endAngle = word.category.endAngle;
-
-          // if angle is wide enough, make 'padding' inside the arc so that words wouldn't be rendered on the edge
-          if (endAngle - startAngle > 0.5) {
-            const padding = 0.1;
-
-            startAngle += padding;
-            endAngle -= padding;
-          }
-
-          angleRange = [startAngle, endAngle];
-        }
-
-        const wordRadius = _scale.scoreRadius(word.score);
-        const randomPoint = randomPointOnCircle(wordRadius, angleRange);
-
-        word.x = randomPoint.x;
-        word.y = randomPoint.y;
-
-        const wordCircle = {
-          x: word.x,
-          y: word.y,
-          r: _scale.freqRadius(word.freq),
-          text: word.text,
-          id: word.id,
-          freq: word.freq,
-          score: word.score
-        };
-
-        // find out if circles collide
-        collided = _rendering.circles.find(circle => {
-          return circleCollision(circle, wordCircle);
-        });
-
-        // if no collision of circles detected, continue to detect collisions of texts
-        if (collided === undefined) {
-          // create text
-          const wordText = _createWordText(word, false);
-
-          // find out if texts collide
-          collided = _rendering.texts.find(text => {
-            return rectangleCollision(text, wordText);
-          });
-
-          // if no collision of circles and texts detected
-          if (collided === undefined) {
-            // add the circle
-            _rendering.circles.push(wordCircle);
-
-            // add the text
-            _rendering.texts.push(wordText);
-          }
-        }
-
-        threshold--;
-
-        if (threshold === 0) {
-          thresholdReached++;
-        }
+        angleRange = [startAngle, endAngle];
       }
-    });
 
-    return thresholdReached;
+      const wordRadial = _scale.scoreRadius(word.score);
+      const randomPoint = randomPointOnCircle(wordRadial, angleRange);
+
+      word.x = randomPoint.x;
+      word.y = randomPoint.y;
+
+      // create word's circle
+      const wordCircle = {
+        class: 'word_circle',
+        x: word.x,
+        y: word.y,
+        r: _scale.freqRadius(word.freq),
+        wordRadial,
+        text: word.text,
+        id: word.id,
+        freq: word.freq,
+        score: word.score,
+        fill: 'rgba(50, 50, 50, 0.3)'
+      };
+
+      // create word's text
+      let wordText = {
+        class: 'word_text',
+        x: word.x,
+        y: word.y,
+        wordRadial,
+        width: 60,
+        height: 30,
+        text: word.text,
+        score: word.score,
+        fill: 'rgba(50, 50, 50, 0.6)',
+        id: word.id // both words' id are the same
+      };
+
+      // add the circle
+      _rendering.circles.push(wordCircle);
+
+      // add the text
+      _rendering.texts.push(wordText);
+    });
   }
 
   function _addPositions() {
-    const words = allWords(_data.words);
+    // add default positions of word circles with its text
+    _addDefaultPositions();
 
-    // sort all word so that words with biggest sum of freqs are placed first
-    const sortedWords = words.sort((word2, word1) => word1.freq - word2.freq);
+    const circlesSelection = select('svg')
+      .selectAll('.word__circle_test')
+      .data(_rendering.circles)
+      .enter()
+      .append('circle')
+      .attr('fill', d => d.fill)
+      .attr('r', d => d.r)
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y);
 
-    let threshold = 10;
-    let thresholdReached = -1;
+    const textsSelection = select('svg')
+      .selectAll('.word__text_test')
+      .data(_rendering.texts)
+      .enter()
+      .append('text')
+      .attr('fill', d => d.fill)
+      .attr('x', d => d.x)
+      .attr('y', d => d.y)
+      .attr('textAnchor', 'middle')
+      .attr('alignmentBaseline', 'middle')
+      .attr('font-size', 12)
+      .text(d => d.text);
 
-    while (threshold > 0 && thresholdReached !== 0) {
-      // find positions and store positions
-      thresholdReached = _findPositions(sortedWords);
+    function _simulationCirclesTick() {
+      _shapeService.updateShape('.word__circle', {
+        'cx': d => {
+          // console.log('--- data', d);
+          // console.log('x', _params.viz.width / 2 + d.x);
+          return _params.viz.width / 2 + d.x;
+        },
+        'cy': d => _params.viz.height / 2 + d.y
+      });
 
-      if (thresholdReached !== 0) {
-        // make the range's of circles and fonts smaller and find positions again
-        const oldFreqRadius = _scale.freqRadius.range();
-        const minFreqRadius = oldFreqRadius[0] * 0.9;
-        const maxFreqRadius = oldFreqRadius[1] * 0.9;
+      circlesSelection.each(d => {
+        const xPos = _params.viz.width / 2 + d.x;
+        const yPos = _params.viz.height / 2 + d.y;
 
-        _scale.freqRadius.range([minFreqRadius, maxFreqRadius]);
+        // select(`#word__circle-${d.id}`)
+        //   .attr('cx', xPos)
+        //   .attr('cy', yPos);
 
-        const oldFontSize = _scale.fontSize.range();
-        const minFontSize = oldFontSize[0] * 0.95;
-        const maxFontSize = oldFontSize[1] * 0.95;
+        // select(`#word__text-${d.id}`)
+        //   .attr('x', xPos)
+        //   .attr('y', yPos);
+      });
 
-        _scale.fontSize.range([minFontSize, maxFontSize]);
-      }
+      circlesSelection
+        .attr('cx', (d, i) => {
+          const xPos = _params.viz.width / 2 + d.x;
 
-      threshold--;
+          // select(`#word__circle-${d.id}`).attr('cx', xPos);
+
+          return xPos;
+        })
+        .attr('cy', d => {
+          const yPos = _params.viz.height / 2 + d.y;
+
+          // select(`#word__circle-${d.id}`).attr('cy', yPos);
+
+          return yPos;
+        });
     }
 
-    // if positioning couldn't be find even after scaling down the scales
-    if (threshold === 0 && thresholdReached !== 0) {
-      // add random positions even if some of the words will be overlapped
-      _findPositions(sortedWords);
+    function _simulationTextsTick() {
+      // _shapeService.updateShape('.word__text', {
+      //   'x': d => {
+      //     // console.log('--- data', d);
+      //     // console.log('x', _params.viz.width / 2 + d.x);
+      //     return _params.viz.width / 2 + d.x;
+      //   },
+      //   'y': d => _params.viz.height / 2 + d.y
+      // });
+
+      // textsSelection.each(d => {
+      //   const xPos = _params.viz.width / 2 + d.x;
+      //   const yPos = _params.viz.height / 2 + d.y;
+
+      //   select(`#word__text-${d.id}`)
+      //     .attr('x', xPos)
+      //     .attr('y', yPos);
+      // });
+
+      textsSelection
+        .attr('x', (d, i) => {
+          const xPos = _params.viz.width / 2 + d.x;
+
+          // select(`#word__circle-${d.id}`).attr('x', xPos);
+
+          return xPos;
+        })
+        .attr('y', d => {
+          const yPos = _params.viz.height / 2 + d.y;
+
+          // select(`#word__circle-${d.id}`).attr('y', yPos);
+
+          return yPos;
+        });
     }
+
+    const _simulationCircles = forceSimulation(_rendering.circles)
+      .force('charge', forceManyBody().strength(-50))
+      .force('collision', forceCollide().radius(d => {
+        return d.r;
+      }))
+      .force('r', forceRadial(d => {
+        return d.wordRadial;
+      }));
+
+    _simulationCircles.on('tick', _simulationCirclesTick);
+
+    const _simulationTexts = forceSimulation(_rendering.texts)
+      .force('charge', forceManyBody().strength(20))
+      .force('collision', bboxCollide(d => [
+        [-d.text.length * 10, -5],
+        [d.text.length * 10, 5]
+      ]))
+      .force('r', forceRadial(d => {
+        return d.wordRadial;
+      }));
+
+    _simulationTexts.on('tick', _simulationTextsTick);
+
+    console.log('circlesSelection', circlesSelection);
+    console.log('simulation', _simulationCircles);
   }
 
   function _draw(initShapes) {
@@ -423,20 +466,20 @@ function RadialViz(data, params) {
 
         // find the category settings from the params
         // 1) it can be defined either by the name in "category.items"
-        const category = _params.category.items
-          ? _params.category.items.find(category => category.name === name)
-          : false;
+        const category = _params.category.items ?
+          _params.category.items.find(category => category.name === name) :
+          false;
 
         // if category item is found get the info if it should be shown
-        const categoryNameDefined = category
-          ? category.show
-          : false;
+        const categoryNameDefined = category ?
+          category.show :
+          false;
 
         // find the category settings from the params
         // 2) it can be defined as an index in "category.showItems"
-        const categoryIndexDefined = _params.category.showItems
-          ? _params.category.showItems.includes(categoryIndex)
-          : false;
+        const categoryIndexDefined = _params.category.showItems ?
+          _params.category.showItems.includes(categoryIndex) :
+          false;
 
         // if the category is not defined in the params, it should be not shown by default
         if (categoryNameDefined || categoryIndexDefined) {

@@ -1,8 +1,13 @@
-import { select } from 'd3-selection';
-import { transition } from 'd3-transition';
-import { easeBackOut } from 'd3-ease';
-
+import {
+  easeBackOut
+} from 'd3-ease';
 import kebabCase from 'lodash/kebabCase';
+import {
+  select
+} from 'd3-selection';
+import {
+  transition
+} from 'd3-transition';
 
 /**
  * @requires
@@ -51,7 +56,10 @@ function ShapeService() {
       .remove();
 
     for (let parameter in shapeParams.exit) {
-      const { param, value } = _getParamValue(parameter, shapeParams.exit);
+      const {
+        param,
+        value
+      } = _getParamValue(parameter, shapeParams.exit);
 
       exitShape
         .attr(param, value);
@@ -64,7 +72,10 @@ function ShapeService() {
       .ease(easeBackOut);
 
     for (let parameter in shapeParams.update) {
-      const { param, value } = _getParamValue(parameter, shapeParams.update);
+      const {
+        param,
+        value
+      } = _getParamValue(parameter, shapeParams.update);
 
       if (param === 'text') {
         selection
@@ -83,7 +94,10 @@ function ShapeService() {
       .attr('class', shapeParams.class);
 
     for (let parameter in shapeParams.enter) {
-      const { param, value } = _getParamValue(parameter, shapeParams.enter);
+      const {
+        param,
+        value
+      } = _getParamValue(parameter, shapeParams.enter);
 
       if (param === 'transition') {
         // if there is no delay function defined, do not delay
@@ -152,10 +166,13 @@ function ShapeService() {
   function updateShape(selection, updateParams, transition) {
     const applyTransition = transition === undefined ? true : transition;
     const shapeSelection = typeof selection === 'string' ? _svg.selectAll(selection) : selection;
-    let transitionApplied = false;
+    let transitionApplied = true;
 
     for (let parameter in updateParams) {
-      const { param, value } = _getParamValue(parameter, updateParams);
+      const {
+        param,
+        value
+      } = _getParamValue(parameter, updateParams);
 
       if (transitionApplied) {
         shapeSelection
