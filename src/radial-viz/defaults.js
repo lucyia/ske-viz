@@ -5,7 +5,12 @@ const defaultParams = {
     className: 'viz-radial',
     width: 600,
     height: 600,
-    margin: { top: 50, right: 50, bottom: 50, left: 50 },
+    margin: {
+      top: 50,
+      right: 50,
+      bottom: 50,
+      left: 50
+    },
     animation: true,
     maxItems: undefined
   },

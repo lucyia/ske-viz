@@ -67,8 +67,8 @@ function catchError(event) {
   console.log(event);
 
   // add the warning to the top of the window
-  const style = 'position:absolute; width:100%; height:30px; background:#000;' +
-    'opacity:0.5; padding: 30px; color:white; font-size: 16px; text-align: center;';
+  const style = 'position:absolute; width:100%; height:30px; background:#000;'
+    + 'opacity:0.5; padding: 30px; color:white; font-size: 16px; text-align: center;';
 
   // add explanation
   const text = 'visualization could not be created, please check the console';
@@ -93,7 +93,7 @@ parseURL(urlThes, 'THES')
   .then(data => RadialViz(data, {
     viz: {
       divId: 'viz-container-2',
-      maxItems: 30,
+      maxItems: 20,
       margin: {
         top: 0,
         right: 0,

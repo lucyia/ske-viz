@@ -21,6 +21,7 @@ import {
 import {
   forceCenter,
   forceCollide,
+  forceLink,
   forceManyBody,
   forceRadial,
   forceSimulation
@@ -83,16 +84,16 @@ function RadialViz(data, params) {
     );
 
     // if circles should be scaled, takze values from params; if they shouln't, take the lower bound for both bounds
-    const freqRadiusRange = _params.circle.scale ?
-      _params.circle.size : [_params.circle.size[0], _params.circle.size[0]];
+    const freqRadiusRange = _params.circle.scale
+      ? _params.circle.size : [_params.circle.size[0], _params.circle.size[0]];
 
     _scale.freqRadius = scaleSqrt()
       .domain(freqRange)
       .range(freqRadiusRange);
 
     // if text should be scaled, take values from params; if it shouldn't, take lower bound for both bounds
-    const fontSizeRange = _params.text.scale ?
-      _params.text.size : [_params.text.size[0], _params.text.size[0]];
+    const fontSizeRange = _params.text.scale
+      ? _params.text.size : [_params.text.size[0], _params.text.size[0]];
 
     _scale.fontSize = scaleLinear()
       .domain(freqRange)
@@ -101,9 +102,9 @@ function RadialViz(data, params) {
     // then initialize all other scales
     const scoreRange = extent(range(_data, 'score', false));
 
-    const minScoreRadius = _params.circle.includeMainWord ?
-      _scale.freqRadius(freqRange[1]) * 1.75 :
-      _params.circle.spaceAroundCentre;
+    const minScoreRadius = _params.circle.includeMainWord
+      ? _scale.freqRadius(freqRange[1]) * 1.75
+      : _params.circle.spaceAroundCentre;
 
     // highest score is in the middle (closest to the main word); the lower the score, the further away from main word
     _scale.scoreRadius = scaleLinear()
@@ -198,36 +199,12 @@ function RadialViz(data, params) {
     // add default positions of word circles with its text
     _addDefaultPositions();
 
-    const circlesSelection = select('svg')
-      .selectAll('.word__circle_test')
-      .data(_rendering.circles)
-      .enter()
-      .append('circle')
-      .attr('fill', d => d.fill)
-      .attr('r', d => d.r)
-      .attr('cx', d => d.x)
-      .attr('cy', d => d.y);
-
-    const textsSelection = select('svg')
-      .selectAll('.word__text_test')
-      .data(_rendering.texts)
-      .enter()
-      .append('text')
-      .attr('fill', d => d.fill)
-      .attr('x', d => d.x)
-      .attr('y', d => d.y)
-      .attr('textAnchor', 'middle')
-      .attr('alignmentBaseline', 'middle')
-      .attr('font-size', 12)
-      .text(d => d.text);
+    let circlesSelection;
+    // let textsSelection;
 
     function _simulationCirclesTick() {
       _shapeService.updateShape('.word__circle', {
-        'cx': d => {
-          // console.log('--- data', d);
-          // console.log('x', _params.viz.width / 2 + d.x);
-          return _params.viz.width / 2 + d.x;
-        },
+        'cx': d => _params.viz.width / 2 + d.x,
         'cy': d => _params.viz.height / 2 + d.y
       });
 
@@ -235,13 +212,13 @@ function RadialViz(data, params) {
         const xPos = _params.viz.width / 2 + d.x;
         const yPos = _params.viz.height / 2 + d.y;
 
-        // select(`#word__circle-${d.id}`)
-        //   .attr('cx', xPos)
-        //   .attr('cy', yPos);
+        select(`#word__circle-${d.id}`)
+          .attr('cx', xPos)
+          .attr('cy', yPos);
 
-        // select(`#word__text-${d.id}`)
-        //   .attr('x', xPos)
-        //   .attr('y', yPos);
+        select(`#word__text-${d.id}`)
+          .attr('x', xPos)
+          .attr('y', yPos);
       });
 
       circlesSelection
@@ -249,79 +226,91 @@ function RadialViz(data, params) {
           const xPos = _params.viz.width / 2 + d.x;
 
           // select(`#word__circle-${d.id}`).attr('cx', xPos);
-
           return xPos;
         })
         .attr('cy', d => {
           const yPos = _params.viz.height / 2 + d.y;
 
           // select(`#word__circle-${d.id}`).attr('cy', yPos);
-
           return yPos;
         });
     }
 
-    function _simulationTextsTick() {
-      // _shapeService.updateShape('.word__text', {
-      //   'x': d => {
-      //     // console.log('--- data', d);
-      //     // console.log('x', _params.viz.width / 2 + d.x);
-      //     return _params.viz.width / 2 + d.x;
-      //   },
-      //   'y': d => _params.viz.height / 2 + d.y
-      // });
+    // function _simulationTextsTick() {
+    //   _shapeService.updateShape('.word__text', {
+    //     'x': d => _params.viz.width / 2 + d.x,
+    //     'y': d => _params.viz.height / 2 + d.y
+    //   });
 
-      // textsSelection.each(d => {
-      //   const xPos = _params.viz.width / 2 + d.x;
-      //   const yPos = _params.viz.height / 2 + d.y;
+    //   textsSelection.each(d => {
+    //     const xPos = _params.viz.width / 2 + d.x;
+    //     const yPos = _params.viz.height / 2 + d.y;
 
-      //   select(`#word__text-${d.id}`)
-      //     .attr('x', xPos)
-      //     .attr('y', yPos);
-      // });
+    //     select(`#word__text-${d.id}`)
+    //       .attr('x', xPos)
+    //       .attr('y', yPos);
+    //   });
+    // }
 
-      textsSelection
-        .attr('x', (d, i) => {
-          const xPos = _params.viz.width / 2 + d.x;
+    // apply force layout only for thesaurus visualization
+    if (!_categories) {
+      // debugging circles
+      circlesSelection = select('svg')
+        .selectAll('.word__circle_test')
+        .data(_rendering.circles)
+        .enter()
+        .append('circle')
+        .attr('fill', d => d.fill)
+        .attr('r', d => d.r)
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y)
+        .attr('title', d => d.text);
 
-          // select(`#word__circle-${d.id}`).attr('x', xPos);
+      // debugging text
+      // textsSelection = select('svg')
+      //   .selectAll('.word__text_test')
+      //   .data(_rendering.texts)
+      //   .enter()
+      //   .append('text')
+      //   .attr('fill', d => d.fill)
+      //   .attr('x', d => d.x)
+      //   .attr('y', d => d.y)
+      //   .attr('textAnchor', 'middle')
+      //   .attr('alignmentBaseline', 'middle')
+      //   .attr('font-size', 12)
+      //   .text(d => d.text);
 
-          return xPos;
-        })
-        .attr('y', d => {
-          const yPos = _params.viz.height / 2 + d.y;
+      // textsSelection
+      //   .attr('x', (d, i) => {
+      //     const xPos = _params.viz.width / 2 + d.x;
+      //     // select(`#word__circle-${d.id}`).attr('x', xPos);
+      //     return xPos;
+      //   })
+      //   .attr('y', d => {
+      //     const yPos = _params.viz.height / 2 + d.y;
+      //     // select(`#word__circle-${d.id}`).attr('y', yPos);
+      //     return yPos;
+      //   });
+      // }
 
-          // select(`#word__circle-${d.id}`).attr('y', yPos);
+      const _simulationCircles = forceSimulation(_rendering.circles)
+        .force('charge', forceManyBody().strength(-50))
+        .force('collision', forceCollide().radius(d => d.r))
+        .force('r', forceRadial(d => d.wordRadial));
 
-          return yPos;
-        });
+      _simulationCircles.on('tick', _simulationCirclesTick);
+
+      // const _simulationTexts = forceSimulation(_rendering.texts)
+      //   .force('links', forceLink().distance(30))
+      //   .force('charge', forceManyBody().strength(-30))
+      //   .force('collision', bboxCollide(d => [
+      //     [-d.text.length * 10, -5],
+      //     [d.text.length * 10, 5]
+      //   ]))
+      //   .force('r', forceRadial(d => d.wordRadial));
+
+      // _simulationTexts.on('tick', _simulationTextsTick);
     }
-
-    const _simulationCircles = forceSimulation(_rendering.circles)
-      .force('charge', forceManyBody().strength(-50))
-      .force('collision', forceCollide().radius(d => {
-        return d.r;
-      }))
-      .force('r', forceRadial(d => {
-        return d.wordRadial;
-      }));
-
-    _simulationCircles.on('tick', _simulationCirclesTick);
-
-    const _simulationTexts = forceSimulation(_rendering.texts)
-      .force('charge', forceManyBody().strength(20))
-      .force('collision', bboxCollide(d => [
-        [-d.text.length * 10, -5],
-        [d.text.length * 10, 5]
-      ]))
-      .force('r', forceRadial(d => {
-        return d.wordRadial;
-      }));
-
-    _simulationTexts.on('tick', _simulationTextsTick);
-
-    console.log('circlesSelection', circlesSelection);
-    console.log('simulation', _simulationCircles);
   }
 
   function _draw(initShapes) {
@@ -466,20 +455,20 @@ function RadialViz(data, params) {
 
         // find the category settings from the params
         // 1) it can be defined either by the name in "category.items"
-        const category = _params.category.items ?
-          _params.category.items.find(category => category.name === name) :
-          false;
+        const category = _params.category.items
+          ? _params.category.items.find(category => category.name === name)
+          : false;
 
         // if category item is found get the info if it should be shown
-        const categoryNameDefined = category ?
-          category.show :
-          false;
+        const categoryNameDefined = category
+          ? category.show
+          : false;
 
         // find the category settings from the params
         // 2) it can be defined as an index in "category.showItems"
-        const categoryIndexDefined = _params.category.showItems ?
-          _params.category.showItems.includes(categoryIndex) :
-          false;
+        const categoryIndexDefined = _params.category.showItems
+          ? _params.category.showItems.includes(categoryIndex)
+          : false;
 
         // if the category is not defined in the params, it should be not shown by default
         if (categoryNameDefined || categoryIndexDefined) {

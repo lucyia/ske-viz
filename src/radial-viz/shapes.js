@@ -13,8 +13,8 @@ function _wordInsideTickHighlight(word, tick, ticks) {
   const tickDiffHalf = ticks.length > 1 ? (ticks[1].value - ticks[0].value) / 2 : 0;
 
   // whether the word is around the hovered tick
-  let wordInHightlightArea = word.score <= (tick.value - tickDiffHalf) &&
-    word.score > (tick.value + tickDiffHalf);
+  let wordInHightlightArea = word.score <= (tick.value - tickDiffHalf)
+    && word.score > (tick.value + tickDiffHalf);
 
   // or the words are outside of the largest tick value - smallest score values than the tick
   if (tick.value === ticks[ticks.length - 1].value) {
@@ -264,9 +264,9 @@ function wordTexts(className, params, scale, shapeService) {
 }
 
 function mainWordText(className, params, scale, shapeService) {
-  const mainWordFontSize = d => params.circle.includeMainWord ?
-    scale.fontSize(d.freq) :
-    scale.fontSize.range()[1];
+  const mainWordFontSize = d => params.circle.includeMainWord
+    ? scale.fontSize(d.freq)
+    : scale.fontSize.range()[1];
 
   return {
     shape: 'text',
@@ -307,9 +307,9 @@ function mainWordCircle(className, params, scale, shapeService) {
   const mainWordX = params.viz.width / 2;
   const mainWordY = params.viz.height / 2;
   const mainWordFill = scale.scoreColor.range()[1];
-  const mainWordRadius = d => params.circle.includeMainWord ?
-    scale.freqRadius(d.freq) :
-    0;
+  const mainWordRadius = d => params.circle.includeMainWord
+    ? scale.freqRadius(d.freq)
+    : 0;
 
   return {
     shape: 'circle',
@@ -384,14 +384,14 @@ function categoryArcs(className, params, scale, shapeService) {
       // highlight word circles - those around the tick will be rendered in full color,
       // all other one will be more opaque
       shapeService.updateShape('.word__circle', {
-        fill: word => word.category.text === category.text ?
-          _getWordCircleColor(word, params, scale) : params.tick.color
+        fill: word => word.category.text === category.text
+          ? _getWordCircleColor(word, params, scale) : params.tick.color
       }, true);
 
       // highlight word texts - the same rule as for circles
       shapeService.updateShape('.word__text', {
-        fill: word => word.category.text === category.text ?
-          params.text.color : color(params.tick.color).darker(0.5)
+        fill: word => word.category.text === category.text
+          ? params.text.color : color(params.tick.color).darker(0.5)
       }, true);
 
       // change the color of all arcs
@@ -468,9 +468,9 @@ function categoryTexts(className, params, scale, shapeService) {
 }
 
 function scoreLegendTicks(className, params, scale, shapeService) {
-  const tickColor = d => params.tick.scoreColor ?
-    scale.scoreColor(d.value) :
-    params.tick.color;
+  const tickColor = d => params.tick.scoreColor
+    ? scale.scoreColor(d.value)
+    : params.tick.color;
 
   return {
     shape: 'circle',
@@ -526,8 +526,8 @@ function scoreLegendTicks(className, params, scale, shapeService) {
 
       // highlight word texts - the same rule as for circles
       shapeService.updateShape('.word__text', {
-        fill: word => _wordInsideTickHighlight(word, tick, params.tick.values) ?
-          params.text.color : color(params.tick.color).darker(0.5)
+        fill: word => _wordInsideTickHighlight(word, tick, params.tick.values)
+          ? params.text.color : color(params.tick.color).darker(0.5)
       });
     },
     mouseout: function mouseout(tick) {
