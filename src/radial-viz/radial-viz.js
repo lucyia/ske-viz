@@ -254,8 +254,15 @@ function RadialViz(data, params) {
 
     // apply force layout only for thesaurus visualization
     if (!_categories) {
-      // debugging circles
-      circlesSelection = select('svg')
+      const _simulationCircles = forceSimulation(_rendering.circles)
+        .force('charge', forceManyBody().strength(-50))
+        .force('collision', forceCollide().radius(d => d.r))
+        .force('r', forceRadial(d => d.wordRadial));
+
+      _simulationCircles.on('tick', _simulationCirclesTick);
+
+      // force circles
+      circlesSelection = select(`#${_params.viz.svgId}`)
         .selectAll('.word__circle_test')
         .data(_rendering.circles)
         .enter()
@@ -264,6 +271,7 @@ function RadialViz(data, params) {
         .attr('r', d => d.r)
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
+        .attr('opacity', 0)
         .attr('title', d => d.text);
 
       // debugging text
@@ -292,13 +300,6 @@ function RadialViz(data, params) {
       //     return yPos;
       //   });
       // }
-
-      const _simulationCircles = forceSimulation(_rendering.circles)
-        .force('charge', forceManyBody().strength(-50))
-        .force('collision', forceCollide().radius(d => d.r))
-        .force('r', forceRadial(d => d.wordRadial));
-
-      _simulationCircles.on('tick', _simulationCirclesTick);
 
       // const _simulationTexts = forceSimulation(_rendering.texts)
       //   .force('links', forceLink().distance(30))
