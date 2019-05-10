@@ -71,7 +71,7 @@
       "newIsCap": true,
       "capIsNew": false
     }],
-    "newline-after-var": [2, "always"],
+    "newline-after-var": [1, "always"],
     "new-parens": 2,
     "no-alert": 0,
     "no-array-constructor": 2,

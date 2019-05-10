@@ -197,8 +197,8 @@ function RadialViz(data, params) {
         x: word.x,
         y: word.y,
         r: radius,
-        rx: word.size.width / 1.8,
-        ry: Math.max(word.size.height / 1.8, radius / 1.2),
+        rx: Math.max(word.size.width / 1.8, radius * 1.2),
+        ry: Math.max(word.size.height / 1.8, radius * 1.2),
         wordRadial,
         text: word.text,
         id: word.id,
@@ -314,7 +314,7 @@ function RadialViz(data, params) {
         .attr('ry', d => d.ry)
         .attr('opacity', 0.5)
         .attr('title', d => d.text);
-        // .attr('display', 'none'); // force simulation circles are not displayed, just used for updating data circles
+      // .attr('display', 'none'); // force simulation circles are not displayed, just used for updating data circles
     }
   }
 
