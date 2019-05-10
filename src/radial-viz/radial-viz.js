@@ -1,3 +1,5 @@
+import 'd3-ellipse-force';
+
 import {
   allWords,
   range
@@ -37,11 +39,9 @@ import {
 
 // internal helper functions
 import ShapeService from '../utils/shape-service';
-import {
-  bboxCollide
-} from 'd3-bboxCollide';
 // internal functions and params for viz
 import defaultParams from './defaults';
+import ellipseCollide from '../utils/ellipse-collide';
 import {
   extent
 } from 'd3-array';
@@ -120,6 +120,40 @@ function RadialViz(data, params) {
       .range([0.3, 1]);
   }
 
+  function _getWordSize(word, svg) {
+    // render the word to find out the bounding box
+    const textElement = svg
+      .append('text')
+      .attr('font-size', _scale.fontSize(word.freq))
+      .attr('font-family', _params.text.font)
+      .text(word.text);
+
+    const size = textElement.node().getBBox();
+
+    return {
+      width: size.width,
+      height: size.height
+    };
+  }
+
+  function _addWordSize() {
+    // create testing svg
+    const svg = select('body').append('svg');
+
+    // add word sizes
+    _data.words.forEach(category => {
+      category.forEach(word => {
+        word.size = _getWordSize(word, svg);
+      });
+    });
+
+    // add main word size
+    _data.mainWord.size = _getWordSize(_data.mainWord, svg);
+
+    // after all words have calculated bounding boxes, remove svg with all texts
+    svg.remove();
+  }
+
   function _addDefaultPositions() {
     const words = allWords(_data.words);
 
@@ -136,8 +170,6 @@ function RadialViz(data, params) {
     _rendering.texts = [{
       x: _data.mainWord.x,
       y: _data.mainWord.y,
-      width: 60,
-      height: 30,
       text: _data.mainWord.text,
       score: _data.mainWord.score,
       id: _data.mainWord.id // both words' id are the same
@@ -159,12 +191,16 @@ function RadialViz(data, params) {
       word.x = randomPoint.x;
       word.y = randomPoint.y;
 
+      const radius = _scale.freqRadius(word.freq);
+
       // create word's circle
       const wordCircle = {
         class: 'word_circle',
         x: word.x,
         y: word.y,
-        r: _scale.freqRadius(word.freq),
+        r: radius,
+        rx: word.size.width / 1.8,
+        ry: Math.max(word.size.height / 1.8, radius / 1.2),
         wordRadial,
         text: word.text,
         id: word.id,
@@ -179,8 +215,8 @@ function RadialViz(data, params) {
         x: word.x,
         y: word.y,
         wordRadial,
-        width: 60,
-        height: 30,
+        width: word.size.width,
+        height: word.size.height,
         text: word.text,
         score: word.score,
         fill: 'rgba(50, 50, 50, 0.6)',
@@ -199,8 +235,7 @@ function RadialViz(data, params) {
     // add default positions of word circles with its text
     _addDefaultPositions();
 
-    let circlesSelection;
-    // let textsSelection;
+    let collisionSelection;
 
     function _simulationCirclesTick() {
       _shapeService.updateShape('.word__circle', {
@@ -208,7 +243,9 @@ function RadialViz(data, params) {
         'cy': d => _params.viz.height / 2 + d.y
       });
 
-      circlesSelection.each(d => {
+      const collisionElements = collisionSelection.filter(d => !d.isMainWord);
+
+      collisionElements.each(d => {
         const xPos = _params.viz.width / 2 + d.x;
         const yPos = _params.viz.height / 2 + d.y;
 
@@ -221,7 +258,7 @@ function RadialViz(data, params) {
           .attr('y', yPos);
       });
 
-      circlesSelection
+      collisionSelection
         .attr('cx', (d, i) => {
           const xPos = _params.viz.width / 2 + d.x;
 
@@ -236,81 +273,50 @@ function RadialViz(data, params) {
         });
     }
 
-    // function _simulationTextsTick() {
-    //   _shapeService.updateShape('.word__text', {
-    //     'x': d => _params.viz.width / 2 + d.x,
-    //     'y': d => _params.viz.height / 2 + d.y
-    //   });
-
-    //   textsSelection.each(d => {
-    //     const xPos = _params.viz.width / 2 + d.x;
-    //     const yPos = _params.viz.height / 2 + d.y;
-
-    //     select(`#word__text-${d.id}`)
-    //       .attr('x', xPos)
-    //       .attr('y', yPos);
-    //   });
-    // }
-
     // apply force layout only for thesaurus visualization
     if (!_categories) {
-      const _simulationCircles = forceSimulation(_rendering.circles)
-        .force('charge', forceManyBody().strength(-50))
-        .force('collision', forceCollide().radius(d => d.r))
+      const mainWord = _data.mainWord;
+      const mainWordEllipse = {
+        isMainWord: true,
+        x: mainWord.x + _params.viz.width / 2,
+        y: mainWord.y + _params.viz.height / 2,
+        fx: mainWord.x, // fixed x position: the node's position is not changed by force layout
+        fy: mainWord.y, // fixed y position
+        rx: Math.max(mainWord.size.width / 1.5, _scale.freqRadius(mainWord.freq)),
+        ry: mainWord.size.height / 1.5,
+        wordRadial: 0,
+        text: mainWord.text,
+        fill: 'rgba(50, 50, 50, 0.3)'
+      };
+
+      const collisionEllipses = [..._rendering.circles, mainWordEllipse];
+
+      console.log('', _data.mainWord);
+
+      const _simulationCircles = forceSimulation(collisionEllipses)
+        .force('charge', forceManyBody().strength(-20))
+        // .force('collision', forceCollide().radius(d => d.r))
+        .force('collide', ellipseCollide().radius(d => ([d.rx, d.ry])))
         .force('r', forceRadial(d => d.wordRadial));
 
       _simulationCircles.on('tick', _simulationCirclesTick);
 
       // force circles
-      circlesSelection = select(`#${_params.viz.svgId}`)
+      collisionSelection = select(`#${_params.viz.svgId}`)
         .selectAll('.word__circle_test')
-        .data(_rendering.circles)
+        .data(collisionEllipses)
         .enter()
-        .append('circle')
+        // .append('circle')
+        .append('ellipse')
         .attr('fill', d => d.fill)
-        .attr('r', d => d.r)
+        // .attr('r', d => d.r)
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
-        .attr('opacity', 0)
+        .attr('rx', d => d.rx)
+        .attr('ry', d => d.ry)
+        .attr('opacity', 0.5)
         .attr('title', d => d.text);
-
-      // debugging text
-      // textsSelection = select('svg')
-      //   .selectAll('.word__text_test')
-      //   .data(_rendering.texts)
-      //   .enter()
-      //   .append('text')
-      //   .attr('fill', d => d.fill)
-      //   .attr('x', d => d.x)
-      //   .attr('y', d => d.y)
-      //   .attr('textAnchor', 'middle')
-      //   .attr('alignmentBaseline', 'middle')
-      //   .attr('font-size', 12)
-      //   .text(d => d.text);
-
-      // textsSelection
-      //   .attr('x', (d, i) => {
-      //     const xPos = _params.viz.width / 2 + d.x;
-      //     // select(`#word__circle-${d.id}`).attr('x', xPos);
-      //     return xPos;
-      //   })
-      //   .attr('y', d => {
-      //     const yPos = _params.viz.height / 2 + d.y;
-      //     // select(`#word__circle-${d.id}`).attr('y', yPos);
-      //     return yPos;
-      //   });
-      // }
-
-      // const _simulationTexts = forceSimulation(_rendering.texts)
-      //   .force('links', forceLink().distance(30))
-      //   .force('charge', forceManyBody().strength(-30))
-      //   .force('collision', bboxCollide(d => [
-      //     [-d.text.length * 10, -5],
-      //     [d.text.length * 10, 5]
-      //   ]))
-      //   .force('r', forceRadial(d => d.wordRadial));
-
-      // _simulationTexts.on('tick', _simulationTextsTick);
+        // .attr('display', 'none'); // force simulation circles are not displayed, just used for updating data circles
     }
   }
 
@@ -540,6 +546,9 @@ function RadialViz(data, params) {
     _data = _prepareData(shownData);
 
     _initScales();
+
+    // after scales were created, find the words' sizes
+    _addWordSize();
 
     _draw(initShapes);
   }
