@@ -1,5 +1,3 @@
-import 'd3-ellipse-force';
-
 import {
   allWords,
   range
