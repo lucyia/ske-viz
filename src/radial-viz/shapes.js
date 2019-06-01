@@ -1,6 +1,12 @@
-import { color } from 'd3-color';
-import { select } from 'd3-selection';
-import { arc } from 'd3-shape';
+import {
+  arc
+} from 'd3-shape';
+import {
+  color
+} from 'd3-color';
+import {
+  select
+} from 'd3-selection';
 
 function _wordInsideTickHighlight(word, tick, ticks) {
   // half of the difference between ticks
@@ -86,7 +92,10 @@ function _textMouseover(interactedText, d, shapeService, params, scale) {
   const strokeWidth = params.circle.strokeWidth;
 
   // highlight also the circle
-  shapeService.updateShape(`#word__circle-${d.id}`, { stroke, strokeWidth }, false);
+  shapeService.updateShape(`#word__circle-${d.id}`, {
+    stroke,
+    strokeWidth
+  }, false);
 
   // custom callback
   if (typeof params.text.mouseover === 'function') {
@@ -105,7 +114,10 @@ function _textMouseout(interactedText, d, shapeService, params) {
   const strokeWidth = 0;
 
   // reset also the circle
-  shapeService.updateShape(`#word__circle-${d.id}`, { stroke, strokeWidth }, false);
+  shapeService.updateShape(`#word__circle-${d.id}`, {
+    stroke,
+    strokeWidth
+  }, false);
 
   // custom callback
   if (typeof params.text.mouseout === 'function') {
@@ -131,7 +143,10 @@ function _circleMouseover(interactedCircle, d, shapeService, params, scale) {
   const strokeWidth = params.circle.strokeWidth;
 
   // highlight only the hovered circle
-  shapeService.updateShape(interactedCircle, { stroke, strokeWidth }, false);
+  shapeService.updateShape(interactedCircle, {
+    stroke,
+    strokeWidth
+  }, false);
 
   // custom callback
   if (typeof params.circle.mouseover === 'function') {
@@ -145,7 +160,10 @@ function _circleMouseout(interactedCircle, d, shapeService, params) {
   const strokeWidth = 0;
 
   // reset the hovered circle
-  shapeService.updateShape(interactedCircle, { stroke, strokeWidth }, false);
+  shapeService.updateShape(interactedCircle, {
+    stroke,
+    strokeWidth
+  }, false);
 
   // custom callback
   if (typeof params.circle.mouseout === 'function') {
@@ -168,17 +186,11 @@ function wordCircles(className, params, scale, shapeService) {
     class: className,
     enter: {
       id: d => circleId(d),
-      cx: d => params.viz.width / 2,
-      cy: d => params.viz.height / 2,
+      cx: d => params.viz.width / 2 + d.x,
+      cy: d => params.viz.height / 2 + d.y,
       fill: d => _getWordCircleColor(d, params, scale),
       fillOpacity: d => _getWordCircleOpacity(d, params, scale),
-      r: d => 0,
-      transition: {
-        delay: (d, i) => i * 100 + 800,
-        r: d => scale.freqRadius(d.freq),
-        cx: d => params.viz.width / 2 + d.x,
-        cy: d => params.viz.height / 2 + d.y
-      }
+      r: d => scale.freqRadius(d.freq)
     },
     update: {
       id: d => circleId(d),
@@ -213,22 +225,16 @@ function wordTexts(className, params, scale, shapeService) {
     class: className,
     enter: {
       id: d => textId(d),
-      x: d => params.viz.width / 2,
-      y: d => params.viz.height / 2,
+      x: d => params.viz.width / 2 + d.x,
+      y: d => params.viz.height / 2 + d.y,
       fill: d => params.text.color,
       fontSize: d => scale.fontSize(d.freq),
       fontFamily: d => params.text.font,
       textAnchor: d => 'middle',
       alignmentBaseline: d => 'middle',
       cursor: d => 'pointer',
-      opacity: d => 0,
-      text: d => d.text,
-      transition: {
-        delay: (d, i) => i * 100 + 800,
-        opacity: d => 1,
-        x: d => params.viz.width / 2 + d.x,
-        y: d => params.viz.height / 2 + d.y
-      }
+      opacity: d => 1,
+      text: d => d.text
     },
     update: {
       id: d => textId(d),
@@ -379,15 +385,13 @@ function categoryArcs(className, params, scale, shapeService) {
       // all other one will be more opaque
       shapeService.updateShape('.word__circle', {
         fill: word => word.category.text === category.text
-          ? _getWordCircleColor(word, params, scale)
-          : params.tick.color
+          ? _getWordCircleColor(word, params, scale) : params.tick.color
       }, true);
 
       // highlight word texts - the same rule as for circles
       shapeService.updateShape('.word__text', {
         fill: word => word.category.text === category.text
-          ? params.text.color
-          : color(params.tick.color).darker(0.5)
+          ? params.text.color : color(params.tick.color).darker(0.5)
       }, true);
 
       // change the color of all arcs
@@ -523,8 +527,7 @@ function scoreLegendTicks(className, params, scale, shapeService) {
       // highlight word texts - the same rule as for circles
       shapeService.updateShape('.word__text', {
         fill: word => _wordInsideTickHighlight(word, tick, params.tick.values)
-          ? params.text.color
-          : color(params.tick.color).darker(0.5)
+          ? params.text.color : color(params.tick.color).darker(0.5)
       });
     },
     mouseout: function mouseout(tick) {

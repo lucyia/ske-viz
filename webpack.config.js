@@ -1,7 +1,7 @@
 /* This webpack config is based on https://github.com/krasimir/webpack-library-starter */
 
 const webpack = require('webpack');
-const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const path = require('path');
 const env = require('yargs').argv.env; // use --env with webpack 2
 
@@ -12,7 +12,15 @@ let outputFile;
 let entryPoints;
 
 if (env === 'build') {
-  plugins.push(new UglifyJsPlugin({ minimize: true }));
+  plugins.push(new UglifyJsPlugin({
+    sourceMap: true,
+    uglifyOptions: {
+      ecma: 8,
+      compress: {
+        warnings: false
+      }
+    }
+  }));
 
   outputFile = libraryName + '.min.js';
 

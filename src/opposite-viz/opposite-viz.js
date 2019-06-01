@@ -1,15 +1,23 @@
+import {
+  categoryName,
+  mainWordsBackground,
+  mainWordsText,
+  scoreBackground,
+  scoreLegendNumbers,
+  scoreLegendText,
+  scoreLegendTicks,
+  wordCircles,
+  wordTexts
+} from './shapes';
+import { circleCollision, getNewParams, rectangleCollision } from '../utils/utils';
+import { extent, range } from 'd3-array';
 // external libraries
 import { scaleLinear, scaleSqrt } from 'd3-scale';
-import { extent, range } from 'd3-array';
 
 // internal helper functions
 import ShapeService from '../utils/shape-service';
-import { circleCollision, rectangleCollision, getNewParams } from '../utils/utils';
-
 // internal functions and params for viz
 import defaultParams from './defaults';
-import { wordCircles, wordTexts, categoryName, mainWordsBackground, mainWordsText,
-  scoreBackground, scoreLegendTicks, scoreLegendNumbers, scoreLegendText } from './shapes';
 
 /**
  * OpposiveViz
