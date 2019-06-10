@@ -105,6 +105,22 @@ function randomPointOnCircle(radius, range) {
   return pointOnCircle(radius, angle);
 }
 
+function getElementId(d, element, type = 'word') {
+  const categoryName = d.category
+    ? d.category.index
+    : '';
+
+  return `${type}__${element}${categoryName ? `-${categoryName}` : ''}-${d.id}`;
+}
+
+function getCircleId(d) {
+  return getElementId(d, 'circle');
+}
+
+function getTextId(d) {
+  return getElementId(d, 'text');
+}
+
 export {
   getNewParams,
   circleCollision,
@@ -112,5 +128,7 @@ export {
   pointOnCircle,
   randomPointOnCircle,
   randomAngle,
-  rectangleCollision
+  rectangleCollision,
+  getCircleId,
+  getTextId
 };
