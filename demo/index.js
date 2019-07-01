@@ -8,7 +8,7 @@ const urlWSDiff = './data/wsdiff_house_home.json';
 const urlThes = './data/thes_system.json';
 // const urlThesClust = './data/thes_system_clust.json';
 const urlSketch = './data/wsketch_system.json';
-// const urlSketchClust = './data/wsketch_system_clust.json';
+const urlSketchClust = './data/wsketch_system_clust.json';
 
 const showFirstDiff = {
   viz: {
@@ -160,19 +160,7 @@ parseURL(urlSketch, 'SKETCH')
     category: {
       show: true,
       differentAngles: false,
-      showItems: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      // color: [
-      //   'rgb(108, 202, 112)',
-      //   'rgb(205, 220, 57)',
-      //   'rgb(232, 213, 38)',
-      //   'rgb(255, 193, 7)',
-      //   'rgb(255, 152, 0)',
-      //   'rgb(255, 87, 34)',
-      //   'rgb(251, 53, 120)',
-      //   'rgb(206, 99, 224)',
-      //   'rgb(129, 83, 212)',
-      //   'rgb(9, 129, 144)'
-      // ],
+      showItems: [1, 2, 3],
       color: [
         'rgb(108, 202, 112)',
         'rgb(205, 220, 57)',
@@ -192,30 +180,30 @@ parseURL(urlSketch, 'SKETCH')
     }
   }));
 
-// parseURL(urlSketchClust, 'SKETCH')
-//   .then(data => RadialViz(data,
-//     {
-//       viz: {
-//         divId: 'viz-container-5',
-//         margin: { top: 120, right: 120, bottom: 120, left: 120 },
-//         maxItems: 3
-//       },
-//       tick: {
-//         color: 'rgb(255, 255, 255)'
-//       },
-//       circle: {
-//         includeMainWord: false,
-//         color: ['rgb(170, 85, 190)', 'rgb(39, 159, 210)']
-//       },
-//       category: {
-//         show: true,
-//         differentAngles: true,
-//         items: [
-//           { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
-//           { name: 'nouns and verbs modified by "%w"', show: true, color: 'blanchedalmond' }
-//         ],
-//         labelSize: 13,
-//         labelPadding: 80
-//       }
-//     }
-//   ));
+parseURL(urlSketchClust, 'SKETCH')
+  .then(data => RadialViz(data,
+    {
+      viz: {
+        divId: 'viz-container-5',
+        margin: { top: 120, right: 120, bottom: 120, left: 120 },
+        maxItems: 3
+      },
+      tick: {
+        color: 'rgb(255, 255, 255)'
+      },
+      circle: {
+        includeMainWord: false,
+        color: ['rgb(170, 85, 190)', 'rgb(39, 159, 210)']
+      },
+      category: {
+        show: true,
+        differentAngles: true,
+        items: [
+          { name: 'modifiers of "%w"', show: true, color: 'powderblue' },
+          { name: 'nouns and verbs modified by "%w"', show: true, color: 'blanchedalmond' }
+        ],
+        labelSize: 13,
+        labelPadding: 80
+      }
+    }
+  ));

@@ -95,12 +95,16 @@ function pointOnCircle(radius, angle) {
   };
 }
 
-function randomPointOnCircle(radius, range) {
+function randomPointOnCircle(radius, range, word) {
   const scale = scaleLinear()
     .domain([0, Math.PI * 2])
     .range(range ? range : [0, Math.PI * 2]);
 
   const angle = scale(randomAngle());
+
+  if (word) {
+    word.angle = angle;
+  }
 
   return pointOnCircle(radius, angle);
 }
