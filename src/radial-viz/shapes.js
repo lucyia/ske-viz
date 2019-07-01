@@ -1,3 +1,5 @@
+import { getCircleId, getTextId } from '../utils/utils';
+
 import {
   arc
 } from 'd3-shape';
@@ -179,13 +181,11 @@ function _circleMouseclick(d, params) {
 }
 
 function wordCircles(className, params, scale, shapeService) {
-  const circleId = d => `word__circle-${d.id}`;
-
   return {
     shape: 'circle',
     class: className,
     enter: {
-      id: d => circleId(d),
+      id: d => getCircleId(d),
       cx: d => params.viz.width / 2 + d.x,
       cy: d => params.viz.height / 2 + d.y,
       fill: d => _getWordCircleColor(d, params, scale),
@@ -193,7 +193,7 @@ function wordCircles(className, params, scale, shapeService) {
       r: d => scale.freqRadius(d.freq)
     },
     update: {
-      id: d => circleId(d),
+      id: d => getCircleId(d),
       cx: d => params.viz.width / 2 + d.x,
       cy: d => params.viz.height / 2 + d.y,
       fill: d => _getWordCircleColor(d, params, scale),
@@ -218,13 +218,11 @@ function wordCircles(className, params, scale, shapeService) {
 }
 
 function wordTexts(className, params, scale, shapeService) {
-  const textId = d => `word__text-${d.id}`;
-
   return {
     shape: 'text',
     class: className,
     enter: {
-      id: d => textId(d),
+      id: d => getTextId(d),
       x: d => params.viz.width / 2 + d.x,
       y: d => params.viz.height / 2 + d.y,
       fill: d => params.text.color,
@@ -237,7 +235,7 @@ function wordTexts(className, params, scale, shapeService) {
       text: d => d.text
     },
     update: {
-      id: d => textId(d),
+      id: d => getTextId(d),
       x: d => params.viz.width / 2 + d.x,
       y: d => params.viz.height / 2 + d.y,
       fontSize: d => scale.fontSize(d.freq),

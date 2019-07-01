@@ -12,28 +12,21 @@ import {
   wordTexts
 } from './shapes';
 import {
-  circleCollision,
-  getNewParams,
-  pointOnCircle,
-  randomPointOnCircle,
-  rectangleCollision
-} from '../utils/utils';
-import {
-  forceCenter,
-  forceCollide,
-  forceLink,
   forceManyBody,
   forceRadial,
   forceSimulation
 } from 'd3-force';
 import {
+  getCircleId,
+  getNewParams,
+  getTextId,
+  pointOnCircle,
+  randomPointOnCircle
+} from '../utils/utils';
+import {
   scaleLinear,
   scaleSqrt
 } from 'd3-scale';
-import {
-  select,
-  selectAll
-} from 'd3-selection';
 
 // internal helper functions
 import ShapeService from '../utils/shape-service';
@@ -46,16 +39,21 @@ import {
 import {
   pie
 } from 'd3-shape';
+import {
+  select
+} from 'd3-selection';
 import uniqueId from 'lodash/uniqueId';
 
 /**
  * RadialViz
  * @param {object} data - data containing words
  * @param {object} params - parameters
+ * @param {boolean} debug - flag for allowing extra elements to be visible and logs in console
  * @returns {void}
  */
-function RadialViz(data, params) {
+function RadialViz(data, params, debug = true) {
 
+  let _debug = debug;
   let _svg;
   let _shapeService;
   let _params;
@@ -184,7 +182,7 @@ function RadialViz(data, params) {
       }
 
       const wordRadial = _scale.scoreRadius(word.score);
-      const randomPoint = randomPointOnCircle(wordRadial, angleRange);
+      const randomPoint = randomPointOnCircle(wordRadial, angleRange, word);
 
       word.x = randomPoint.x;
       word.y = randomPoint.y;
@@ -204,8 +202,13 @@ function RadialViz(data, params) {
         id: word.id,
         freq: word.freq,
         score: word.score,
-        fill: 'rgba(50, 50, 50, 0.3)'
+        fill: 'rgba(50, 50, 50, 0.3)',
+        angle: word.angle
       };
+
+      if (_categories) {
+        wordCircle.category = word.category;
+      }
 
       // create word's text
       let wordText = {
@@ -218,7 +221,8 @@ function RadialViz(data, params) {
         text: word.text,
         score: word.score,
         fill: 'rgba(50, 50, 50, 0.6)',
-        id: word.id // both words' id are the same
+        id: word.id, // both words' id are the same
+        angle: word.angle
       };
 
       // add the circle
@@ -233,45 +237,63 @@ function RadialViz(data, params) {
     // add default positions of word circles with its text
     _addDefaultPositions();
 
+    const ellipseClass = 'word__circle_test';
+
     let collisionSelection;
+    let collisionEllipses;
 
     function _simulationCirclesTick() {
-      _shapeService.updateShape('.word__circle', {
-        'cx': d => _params.viz.width / 2 + d.x,
-        'cy': d => _params.viz.height / 2 + d.y
-      });
-
       const collisionElements = collisionSelection.filter(d => !d.isMainWord);
 
       collisionElements.each(d => {
         const xPos = _params.viz.width / 2 + d.x;
         const yPos = _params.viz.height / 2 + d.y;
 
-        select(`#word__circle-${d.id}`)
+        _svg
+          .select(`#${getCircleId(d)}`)
           .attr('cx', xPos)
           .attr('cy', yPos);
 
-        select(`#word__text-${d.id}`)
+        _svg
+          .select(`#${getTextId(d)}`)
           .attr('x', xPos)
           .attr('y', yPos);
       });
 
       collisionSelection
-        .attr('cx', (d, i) => {
-          const xPos = _params.viz.width / 2 + d.x;
+        .attr('cx', d => _params.viz.width / 2 + d.x)
+        .attr('cy', d => _params.viz.height / 2 + d.y);
+    };
 
-          // select(`#word__circle-${d.id}`).attr('cx', xPos);
-          return xPos;
-        })
-        .attr('cy', d => {
-          const yPos = _params.viz.height / 2 + d.y;
+    function _simulationCategoriesCirclesTick() {
+      collisionSelection.each(d => {
+        const startAnglePoint = pointOnCircle(d.wordRadial, d.category.startAngle);
+        const endAnglePoint = pointOnCircle(d.wordRadial, d.category.endAngle);
 
-          // select(`#word__circle-${d.id}`).attr('cy', yPos);
-          return yPos;
-        });
-    }
+        if (d.angle < d.category.startAngle) {
+          d.x = startAnglePoint.x;
+          d.y = startAnglePoint.y;
+        } else if (d.angle > d.category.endAngle) {
+          d.x = endAnglePoint.x;
+          d.y = endAnglePoint.y;
+        }
 
-    // apply force layout only for thesaurus visualization
+        _svg.select(`#${ellipseClass}_${getCircleId(d)}`)
+          .attr('cx', _params.viz.width / 2 + d.x)
+          .attr('cy', _params.viz.height / 2 + d.y);
+
+        _svg
+          .select(`#${getCircleId(d)}`)
+          .attr('cx', _params.viz.width / 2 + d.x)
+          .attr('cy', _params.viz.height / 2 + d.y);
+
+        _svg
+          .select(`#${getTextId(d)}`)
+          .attr('x', _params.viz.width / 2 + d.x)
+          .attr('y', _params.viz.height / 2 + d.y);
+      });
+    };
+
     if (!_categories) {
       const mainWord = _data.mainWord;
       const mainWordEllipse = {
@@ -287,34 +309,57 @@ function RadialViz(data, params) {
         fill: 'rgba(50, 50, 50, 0.3)'
       };
 
-      const collisionEllipses = [..._rendering.circles, mainWordEllipse];
-
-      console.log('', _data.mainWord);
+      collisionEllipses = [..._rendering.circles, mainWordEllipse];
 
       const _simulationCircles = forceSimulation(collisionEllipses)
         .force('charge', forceManyBody().strength(-20))
-        // .force('collision', forceCollide().radius(d => d.r))
         .force('collide', ellipseCollide().radius(d => ([d.rx, d.ry])))
         .force('r', forceRadial(d => d.wordRadial));
 
       _simulationCircles.on('tick', _simulationCirclesTick);
 
-      // force circles
-      collisionSelection = select(`#${_params.viz.svgId}`)
-        .selectAll('.word__circle_test')
+      // ellipses used for force layout - visible in debug only
+      collisionSelection = _svg
+        .selectAll(`.${ellipseClass}_${_params.viz.svgId}`)
         .data(collisionEllipses)
         .enter()
-        // .append('circle')
         .append('ellipse')
+        .attr('id', d => `${ellipseClass}_${getCircleId(d)}`)
+        .attr('class', `${ellipseClass}_${_params.viz.svgId}`)
         .attr('fill', d => d.fill)
-        // .attr('r', d => d.r)
         .attr('cx', d => d.x)
         .attr('cy', d => d.y)
         .attr('rx', d => d.rx)
         .attr('ry', d => d.ry)
         .attr('opacity', 0.5)
-        .attr('title', d => d.text);
-      // .attr('display', 'none'); // force simulation circles are not displayed, just used for updating data circles
+        .attr('title', d => d.text)
+        .style('display', _debug ? 'inherit' : 'none');
+    } else {
+      collisionEllipses = _rendering.circles;
+
+      const _simulationCircles = forceSimulation(collisionEllipses)
+        .force('charge', forceManyBody().strength(0))
+        .force('collide', ellipseCollide().radius(d => ([d.rx, d.ry])))
+        .force('r', forceRadial(d => d.wordRadial));
+
+      _simulationCircles.on('tick', _simulationCategoriesCirclesTick);
+
+      // ellipses used for force layout - visible in debug only
+      collisionSelection = _svg
+        .selectAll(`.${ellipseClass}_${_params.viz.svgId}`)
+        .data(collisionEllipses)
+        .enter()
+        .append('ellipse')
+        .attr('id', d => `${ellipseClass}_${getCircleId(d)}`)
+        .attr('class', `${ellipseClass}_${_params.viz.svgId}`)
+        .attr('fill', d => d.fill)
+        .attr('cx', d => d.x)
+        .attr('cy', d => d.y)
+        .attr('rx', d => d.rx)
+        .attr('ry', d => d.ry)
+        .attr('opacity', 0.5)
+        .attr('title', d => d.text)
+        .style('display', _debug ? 'inherit' : 'none');
     }
   }
 
@@ -516,8 +561,8 @@ function RadialViz(data, params) {
 
     // move the start and end angle so that the result does not resemble a "target" when showing four categories
     pieShape
-      .startAngle(Math.PI / 4)
-      .endAngle(Math.PI * 2 + Math.PI / 4)
+      .startAngle(0)
+      .endAngle(Math.PI * 2)
       .padAngle(padAngle);
 
     // return new array where for each category

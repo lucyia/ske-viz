@@ -95,14 +95,34 @@ function pointOnCircle(radius, angle) {
   };
 }
 
-function randomPointOnCircle(radius, range) {
+function randomPointOnCircle(radius, range, word) {
   const scale = scaleLinear()
     .domain([0, Math.PI * 2])
     .range(range ? range : [0, Math.PI * 2]);
 
   const angle = scale(randomAngle());
 
+  if (word) {
+    word.angle = angle;
+  }
+
   return pointOnCircle(radius, angle);
+}
+
+function getElementId(d, element, type = 'word') {
+  const categoryName = d.category
+    ? d.category.index
+    : '';
+
+  return `${type}__${element}${categoryName ? `-${categoryName}` : ''}-${d.id}`;
+}
+
+function getCircleId(d) {
+  return getElementId(d, 'circle');
+}
+
+function getTextId(d) {
+  return getElementId(d, 'text');
 }
 
 export {
@@ -112,5 +132,7 @@ export {
   pointOnCircle,
   randomPointOnCircle,
   randomAngle,
-  rectangleCollision
+  rectangleCollision,
+  getCircleId,
+  getTextId
 };
