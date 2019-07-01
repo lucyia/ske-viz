@@ -51,7 +51,7 @@ import uniqueId from 'lodash/uniqueId';
  * @param {boolean} debug - flag for allowing extra elements to be visible and logs in console
  * @returns {void}
  */
-function RadialViz(data, params, debug = true) {
+function RadialViz(data, params, debug = false) {
 
   let _debug = debug;
   let _svg;
